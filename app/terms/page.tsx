@@ -26,7 +26,7 @@ export default function TermsPage() {
         .
       </p>
 
-      <h2 className="text-lg font-semibold text-foreground">The service</h2>
+      <h2 id="service" className="scroll-mt-8 text-lg font-semibold text-foreground">The service</h2>
       <p>
         Iris is a software-as-a-service operations layer for construction and
         similar field businesses. You can manage jobs, crew, notes, meetings,
@@ -35,7 +35,7 @@ export default function TermsPage() {
         is part of the product, not a separate marketing list.
       </p>
 
-      <h2 className="text-lg font-semibold text-foreground">SMS program</h2>
+      <h2 id="sms-program" className="scroll-mt-8 text-lg font-semibold text-foreground">SMS program</h2>
       <p>
         <strong>Program name:</strong> Iris
       </p>
@@ -73,7 +73,7 @@ export default function TermsPage() {
         may vary by carrier.
       </p>
 
-      <h2 className="text-lg font-semibold text-foreground">Consent</h2>
+      <h2 id="consent" className="scroll-mt-8 text-lg font-semibold text-foreground">Consent</h2>
       <p>
         Providing your mobile number on the signup page and requesting a code
         is your consent to receive Iris SMS as described above. Consent is not
@@ -96,7 +96,7 @@ export default function TermsPage() {
         .
       </p>
 
-      <h2 className="text-lg font-semibold text-foreground">
+      <h2 id="inventory" className="scroll-mt-8 text-lg font-semibold text-foreground">
         Connected data and inventory
       </h2>
       <p>
@@ -113,21 +113,21 @@ export default function TermsPage() {
         Iris as the only record for safety-critical or contractual decisions.
       </p>
 
-      <h2 className="text-lg font-semibold text-foreground">Accounts</h2>
+      <h2 id="accounts" className="scroll-mt-8 text-lg font-semibold text-foreground">Accounts</h2>
       <p>
         You must provide a valid US mobile number and keep your account
         information accurate. You are responsible for activity under your
         company org, including invited PMs.
       </p>
 
-      <h2 className="text-lg font-semibold text-foreground">Fees</h2>
+      <h2 id="fees" className="scroll-mt-8 text-lg font-semibold text-foreground">Fees</h2>
       <p>
         Paid plans, including the current commercial package, are described on
         the website or in an order. SMS carrier fees on the recipient’s plan
         are separate from Iris subscription fees.
       </p>
 
-      <h2 className="text-lg font-semibold text-foreground">Acceptable use</h2>
+      <h2 id="acceptable-use" className="scroll-mt-8 text-lg font-semibold text-foreground">Acceptable use</h2>
       <p>
         Do not use Iris to send spam, marketing blasts unrelated to your
         operations, unlawful content, or messages to people who have not
@@ -135,7 +135,7 @@ export default function TermsPage() {
         suspend accounts that create compliance risk.
       </p>
 
-      <h2 className="text-lg font-semibold text-foreground">
+      <h2 id="liability" className="scroll-mt-8 text-lg font-semibold text-foreground">
         Disclaimers and liability
       </h2>
       <p>
@@ -146,13 +146,13 @@ export default function TermsPage() {
         delays, missed deliveries, or carrier filtering.
       </p>
 
-      <h2 className="text-lg font-semibold text-foreground">Changes</h2>
+      <h2 id="changes" className="scroll-mt-8 text-lg font-semibold text-foreground">Changes</h2>
       <p>
         We may update these Terms. The updated date above will change. Material
         SMS-program changes will be posted on this page.
       </p>
 
-      <h2 className="text-lg font-semibold text-foreground">Contact</h2>
+      <h2 id="contact" className="scroll-mt-8 text-lg font-semibold text-foreground">Contact</h2>
       <p>
         <a className="underline" href="mailto:privacy@talkwithiris.xyz">
           privacy@talkwithiris.xyz

@@ -11,6 +11,9 @@ export default function HomePage() {
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
         <span className="text-xl font-semibold tracking-tight">Iris</span>
         <nav className="flex items-center gap-4 text-sm">
+          <Link href="/legal" className="text-muted hover:text-foreground">
+            Legal
+          </Link>
           <Link href={demoUrl} target="_blank" rel="noreferrer">
             <Button size="sm">Book demo</Button>
           </Link>
@@ -206,12 +209,18 @@ export default function HomePage() {
 
       <footer className="border-t border-border py-8 text-center text-sm text-muted">
         <p>Iris — SaaS workspace and SMS for construction teams.</p>
-        <p className="mt-3 flex justify-center gap-4">
+        <p className="mt-3 flex flex-wrap justify-center gap-4">
+          <Link href="/legal" className="hover:text-foreground">
+            Legal
+          </Link>
           <Link href="/privacy" className="hover:text-foreground">
             Privacy
           </Link>
           <Link href="/terms" className="hover:text-foreground">
             Terms
+          </Link>
+          <Link href="/sms" className="hover:text-foreground">
+            SMS
           </Link>
         </p>
       </footer>

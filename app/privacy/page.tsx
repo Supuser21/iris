@@ -21,7 +21,7 @@ export default function PrivacyPage() {
         Twilio.
       </p>
 
-      <h2 className="text-lg font-semibold text-foreground">
+      <h2 id="information-we-collect" className="scroll-mt-8 text-lg font-semibold text-foreground">
         Information we collect
       </h2>
       <ul className="list-disc space-y-2 pl-5">
@@ -48,7 +48,7 @@ export default function PrivacyPage() {
         </li>
       </ul>
 
-      <h2 className="text-lg font-semibold text-foreground">How we use SMS</h2>
+      <h2 id="sms" className="scroll-mt-8 text-lg font-semibold text-foreground">How we use SMS</h2>
       <p>
         Iris sends SMS from a Twilio phone number. Message types include
         one-time verification codes, onboarding, morning briefs, job recaps,
@@ -62,7 +62,7 @@ export default function PrivacyPage() {
         help. We also honor carrier-standard opt-out keywords.
       </p>
 
-      <h2 className="text-lg font-semibold text-foreground">
+      <h2 id="mobile-information" className="scroll-mt-8 text-lg font-semibold text-foreground">
         Mobile information is not shared for marketing
       </h2>
       <p>
@@ -83,7 +83,7 @@ export default function PrivacyPage() {
         products.
       </p>
 
-      <h2 className="text-lg font-semibold text-foreground">
+      <h2 id="company-data" className="scroll-mt-8 text-lg font-semibold text-foreground">
         Company and inventory data
       </h2>
       <p>
@@ -93,7 +93,7 @@ export default function PrivacyPage() {
         configure. We do not use another company’s data to serve yours.
       </p>
 
-      <h2 className="text-lg font-semibold text-foreground">Retention</h2>
+      <h2 id="retention" className="scroll-mt-8 text-lg font-semibold text-foreground">Retention</h2>
       <p>
         We keep account, job, and message records while your company uses Iris
         and for a reasonable period afterward to operate the service, meet
@@ -101,7 +101,7 @@ export default function PrivacyPage() {
         your account and associated mobile number.
       </p>
 
-      <h2 className="text-lg font-semibold text-foreground">Your choices</h2>
+      <h2 id="your-choices" className="scroll-mt-8 text-lg font-semibold text-foreground">Your choices</h2>
       <ul className="list-disc space-y-2 pl-5">
         <li>Reply STOP on SMS to unsubscribe from Iris texts.</li>
         <li>Crew and users can also be marked opted out in the product.</li>
@@ -114,13 +114,13 @@ export default function PrivacyPage() {
         </li>
       </ul>
 
-      <h2 className="text-lg font-semibold text-foreground">Children</h2>
+      <h2 id="children" className="scroll-mt-8 text-lg font-semibold text-foreground">Children</h2>
       <p>
         Iris is a business service. It is not directed to children under 13,
         and we do not knowingly collect information from them.
       </p>
 
-      <h2 className="text-lg font-semibold text-foreground">Contact</h2>
+      <h2 id="contact" className="scroll-mt-8 text-lg font-semibold text-foreground">Contact</h2>
       <p>
         Privacy questions:{" "}
         <a className="underline" href="mailto:privacy@talkwithiris.xyz">

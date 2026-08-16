@@ -91,8 +91,10 @@ connector marks what should be enabled in a future implementation sprint.
 
 Public URLs for campaign registration:
 
+- Legal hub: `https://talkwithiris.xyz/legal`
 - Privacy: `https://talkwithiris.xyz/privacy`
 - Terms: `https://talkwithiris.xyz/terms`
+- SMS program: `https://talkwithiris.xyz/sms`
 
 Signup requires an SMS consent checkbox. The privacy policy states that mobile
 numbers and SMS consent are not shared with third parties for marketing.
@@ -111,8 +113,10 @@ instance.
 | Route | Description |
 |-------|-------------|
 | `/` | Marketing landing |
+| `/legal` | Public legal hub with copy-paste policy URLs |
 | `/privacy` | Public privacy policy (Twilio A2P) |
 | `/terms` | Public terms and SMS program (Twilio A2P) |
+| `/sms` | Public SMS program disclosure |
 | `/signup` | Phone OTP signup |
 | `/chat` | Web chat with Iris |
 | `/jobs` | Job workspace home, workflows, Riverside demo |
