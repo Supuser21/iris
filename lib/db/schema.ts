@@ -235,6 +235,38 @@ export const orgMemories = pgTable("org_memories", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
 
+export const orgWorkflows = pgTable("org_workflows", {
+  id: text("id").primaryKey(),
+  orgId: text("org_id")
+    .notNull()
+    .references(() => orgs.id),
+  name: text("name").notNull(),
+  triggerPhrase: text("trigger_phrase").notNull(),
+  goal: text("goal").notNull(),
+  outputType: text("output_type").notNull(),
+  allowedTools: text("allowed_tools").notNull(),
+  toolName: text("tool_name").notNull(),
+  kind: text("kind").notNull().default("custom"),
+  createdByUserId: text("created_by_user_id")
+    .notNull()
+    .references(() => users.id),
+  active: boolean("active").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+});
+
+export const workflowRuns = pgTable("workflow_runs", {
+  id: text("id").primaryKey(),
+  workflowId: text("workflow_id")
+    .notNull()
+    .references(() => orgWorkflows.id),
+  jobId: text("job_id").references(() => jobs.id),
+  input: text("input").notNull(),
+  output: text("output").notNull(),
+  status: text("status").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+});
+
 export type User = typeof users.$inferSelect;
 export type Memory = typeof memories.$inferSelect;
 export type Task = typeof tasks.$inferSelect;
@@ -252,3 +284,5 @@ export type JobDocument = typeof jobDocuments.$inferSelect;
 export type Meeting = typeof meetings.$inferSelect;
 export type OutboundMessage = typeof outboundMessages.$inferSelect;
 export type InboundReply = typeof inboundReplies.$inferSelect;
+export type OrgWorkflow = typeof orgWorkflows.$inferSelect;
+export type WorkflowRun = typeof workflowRuns.$inferSelect;

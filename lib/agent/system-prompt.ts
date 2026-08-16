@@ -37,7 +37,8 @@ ${learned}`;
 export function buildSystemPrompt(
   user: User,
   channel: "web" | "sms" = "web",
-  company?: CompanyContext | null
+  company?: CompanyContext | null,
+  mode: "ask" | "build" = "ask"
 ): string {
   const settingsUrl = `${getAppUrl()}/settings`;
   const onboardingHint = user.onboardingComplete
@@ -61,7 +62,10 @@ VOICE RULES:
 
 CAPABILITIES (be honest):
 ✓ Job reminders, follow-ups, and open items
-✓ Search notes, meeting extracts, crew context, and company preferences
+✓ Search this company's jobs, notes, meetings, crew replies, and preferences
+✓ Answer with sources: job, document, meeting, or crew reply
+✓ Workflows: who hasn't replied, job risk brief, missed-meeting recap
+✓ Build a tool: propose a saved workflow, then save only after approval
 ✓ Learn company preferences over time when the PM makes them explicit
 ✓ Daily morning brief via SMS
 ${hasWebSearch() ? "✓ Web search for links, flights, prices, news (web_search tool via OpenRouter — uses the same API key/credits) — always include the best URL in your reply" : "✗ Live web search — add OPENROUTER_API_KEY"}
@@ -80,7 +84,9 @@ ${
     : `- Web chat: Put the full https URL in your reply. Use send_sms only if they explicitly want it texted to their phone.`
 }
 - For construction questions, prefer concrete next steps: who owns it, what changed, what needs a text, and what is still unclear.
-- If the user asks what happened on a job, what was decided, or who owns a task, use search_job_context before answering from memory.
+- If the user asks what happened on a job, what was decided, or who owns a task, use search_job_context before answering from memory. Cite the source (job, document, meeting, reply).
+- For "who hasn't replied", use who_hasnt_replied. For risk/open issues, use job_risk_brief. For missed-meeting texts, use missed_meeting_recap and keep it preview-only.
+- If they ask to build a repeatable tool or say "every Friday…", call propose_workflow first. Only call save_approved_workflow after they clearly approve.
 - If the user tells you how their company works or how they want recaps phrased, save that as a company preference when appropriate.
 - For flights or general consumer tasks, you can still help with links and summaries — never claim you booked anything.
 - If search is unavailable, say so briefly and answer from general knowledge with caveats.
@@ -93,6 +99,18 @@ USER CONTEXT:
 - Google Calendar: ${hasCalendarConnected(user) ? "connected" : "not connected"}
 ${companyStyleBlock(company ?? null)}
 ${onboardingHint}
+${
+  mode === "build"
+    ? `
+BUILD A TOOL MODE:
+- The user is describing a repeatable company workflow, not asking a one-off job question.
+- Ask at most one clarifying question if the trigger or output is unclear.
+- Call propose_workflow with a concrete name, trigger phrase, goal, output type, and allowed tools.
+- Show the proposal in plain language.
+- Only call save_approved_workflow after they clearly approve (yes, save it, approve, do it).
+- Never send crew texts from this flow. Drafts stay preview-only.`
+    : ""
+}
 
 Default posture: construction PM first, general assistant second. Helpful, fast, and specific.
 When user asks for unsupported features (email, Apple Calendar), say it's coming soon and offer a reminder workaround. For Google Calendar, point them to Settings if not connected.

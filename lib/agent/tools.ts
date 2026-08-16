@@ -3,22 +3,28 @@ import { z } from "zod";
 import { nanoid } from "nanoid";
 import { db } from "@/lib/db";
 import {
-  jobDocuments,
-  jobs,
-  meetings,
   memories,
   orgMemories,
-  orgs,
-  people,
   reminders,
   tasks,
 } from "@/lib/db/schema";
-import { eq, and, desc, inArray, lte } from "drizzle-orm";
+import { eq, and, desc, lte } from "drizzle-orm";
 import { users } from "@/lib/db/schema";
 import type { User } from "@/lib/db/schema";
+import { searchJobContext } from "@/lib/agent/job-context";
+import {
+  inferToolName,
+  listOrgWorkflows,
+  proposeWorkflow,
+  runJobRiskBrief,
+  runMissedMeetingRecap,
+  runNoReplyReport,
+  runSavedWorkflow,
+  saveApprovedWorkflow,
+} from "@/lib/agent/workflows";
+import { getUserOrg } from "@/lib/construction";
 import { getCalendarEvents } from "@/lib/google-calendar";
 import { fetchDailyBriefData } from "@/lib/cron/daily-brief";
-import { parseMeetingExtract } from "@/lib/construction";
 import { sendSms } from "@/lib/sms";
 import { fetchWebPage } from "@/lib/web/fetch-page";
 
@@ -77,123 +83,119 @@ export function createIrisTools(
 
     search_job_context: tool({
       description:
-        "Search construction job notes, meeting summaries, crew, company preferences, and job names before answering project questions",
+        "Search this company's jobs, notes, meetings, crew texts, replies, and preferences. Always cite the returned sources.",
       inputSchema: z.object({
         query: z.string().describe("Job question or search phrase"),
       }),
-      execute: async ({ query }) => {
-        const [ownerOrg] = await db
-          .select()
-          .from(orgs)
-          .where(eq(orgs.ownerUserId, userId))
-          .limit(1);
-        if (!ownerOrg) return { matches: [] };
+      execute: async ({ query }) => searchJobContext(userId, query),
+    }),
 
-        const ownedJobs = await db
-          .select()
-          .from(jobs)
-          .where(eq(jobs.orgId, ownerOrg.id))
-          .orderBy(desc(jobs.createdAt));
-        const jobIds = ownedJobs.map((job) => job.id);
-        const q = query.toLowerCase();
+    who_hasnt_replied: tool({
+      description:
+        "Report which crew members received an Iris text and have not replied. Use for 'who hasn't replied' questions.",
+      inputSchema: z.object({
+        jobQuery: z
+          .string()
+          .optional()
+          .describe("Optional job name like Riverside"),
+      }),
+      execute: async ({ jobQuery }) => runNoReplyReport(userId, jobQuery),
+    }),
 
-        const [docs, meetingRows, crew, companyMemories] = await Promise.all([
-          jobIds.length === 0
-            ? Promise.resolve([])
-            : db.select().from(jobDocuments).where(inArray(jobDocuments.jobId, jobIds)),
-          jobIds.length === 0
-            ? Promise.resolve([])
-            : db.select().from(meetings).where(inArray(meetings.jobId, jobIds)),
-          db.select().from(people).where(eq(people.orgId, ownerOrg.id)),
-          db
-            .select()
-            .from(orgMemories)
-            .where(eq(orgMemories.orgId, ownerOrg.id))
-            .orderBy(desc(orgMemories.createdAt)),
-        ]);
+    job_risk_brief: tool({
+      description:
+        "Build a job risk brief from the latest meeting, open owners, and missing replies.",
+      inputSchema: z.object({
+        jobQuery: z.string().optional().describe("Optional job name"),
+      }),
+      execute: async ({ jobQuery }) => runJobRiskBrief(userId, jobQuery),
+    }),
 
-        const matches: Array<{
-          type: string;
-          jobName: string;
-          title: string;
-          snippet: string;
-        }> = [];
+    missed_meeting_recap: tool({
+      description:
+        "Draft a recap for crew who missed the latest meeting. Preview only — do not send.",
+      inputSchema: z.object({
+        jobQuery: z.string().optional().describe("Optional job name"),
+      }),
+      execute: async ({ jobQuery }) => runMissedMeetingRecap(userId, jobQuery),
+    }),
 
-        for (const job of ownedJobs) {
-          const haystack = `${job.name} ${job.address ?? ""}`.toLowerCase();
-          if (haystack.includes(q)) {
-            matches.push({
-              type: "job",
-              jobName: job.name,
-              title: job.name,
-              snippet: job.address ?? "Active job",
-            });
-          }
-        }
-
-        for (const person of crew) {
-          const haystack = `${person.name} ${person.role ?? ""}`.toLowerCase();
-          if (haystack.includes(q)) {
-            matches.push({
-              type: "crew",
-              jobName: "Crew",
-              title: person.name,
-              snippet: person.role ?? "Crew member",
-            });
-          }
-        }
-
-        for (const doc of docs) {
-          const jobName = ownedJobs.find((job) => job.id === doc.jobId)?.name ?? "Job";
-          const haystack = `${doc.title} ${doc.content}`.toLowerCase();
-          if (!haystack.includes(q)) continue;
-          const content = doc.content.replace(/\s+/g, " ").trim();
-          matches.push({
-            type: doc.source,
-            jobName,
-            title: doc.title,
-            snippet: content.slice(0, 220),
-          });
-        }
-
-        for (const meeting of meetingRows) {
-          const jobName =
-            ownedJobs.find((job) => job.id === meeting.jobId)?.name ?? "Job";
-          const parsed = parseMeetingExtract(meeting.extracted);
-          const haystack = [
-            meeting.title,
-            meeting.transcript,
-            parsed.draftRecap,
-            parsed.decisions.join(" "),
-            parsed.owners.map((owner) => `${owner.name} ${owner.task}`).join(" "),
-          ]
-            .join(" ")
-            .toLowerCase();
-          if (!haystack.includes(q)) continue;
-          matches.push({
-            type: "meeting",
-            jobName,
-            title: meeting.title,
-            snippet:
-              parsed.draftRecap ||
-              parsed.decisions.join("; ") ||
-              meeting.transcript.slice(0, 220),
-          });
-        }
-
-        for (const memory of companyMemories) {
-          const haystack = `${memory.content} ${memory.tags ?? ""}`.toLowerCase();
-          if (!haystack.includes(q)) continue;
-          matches.push({
-            type: "company_memory",
-            jobName: ownerOrg.name,
-            title: memory.tags || "Company preference",
-            snippet: memory.content,
-          });
-        }
-
-        return { matches: matches.slice(0, 10) };
+    list_company_workflows: tool({
+      description: "List saved company workflows for this org",
+      inputSchema: z.object({}),
+      execute: async () => {
+        const org = await getUserOrg(userId);
+        if (!org) return { workflows: [] };
+        const workflows = await listOrgWorkflows(org.id);
+        return {
+          workflows: workflows.map((workflow) => ({
+            id: workflow.id,
+            name: workflow.name,
+            triggerPhrase: workflow.triggerPhrase,
+            goal: workflow.goal,
+            outputType: workflow.outputType,
+            kind: workflow.kind,
+            latestRunAt: workflow.latestRun?.createdAt ?? null,
+          })),
+        };
       },
+    }),
+
+    run_company_workflow: tool({
+      description: "Run a saved company workflow by id or name",
+      inputSchema: z.object({
+        workflowId: z.string().optional(),
+        workflowName: z.string().optional(),
+        jobQuery: z.string().optional(),
+      }),
+      execute: async ({ workflowId, workflowName, jobQuery }) =>
+        runSavedWorkflow({ userId, workflowId, workflowName, jobQuery }),
+    }),
+
+    propose_workflow: tool({
+      description:
+        "Propose a repeatable company workflow. Do not save until the user approves.",
+      inputSchema: z.object({
+        name: z.string(),
+        triggerPhrase: z.string(),
+        goal: z.string(),
+        outputType: z
+          .enum(["report", "brief", "checklist", "crew_text"])
+          .optional(),
+        allowedTools: z.array(z.string()).optional(),
+      }),
+      execute: async (input) => proposeWorkflow(input),
+    }),
+
+    save_approved_workflow: tool({
+      description:
+        "Save a proposed workflow after the user clearly approves it. Never save without approval.",
+      inputSchema: z.object({
+        name: z.string(),
+        triggerPhrase: z.string(),
+        goal: z.string(),
+        outputType: z.enum(["report", "brief", "checklist", "crew_text"]),
+        allowedTools: z.array(z.string()),
+        toolName: z
+          .enum([
+            "who_hasnt_replied",
+            "job_risk_brief",
+            "missed_meeting_recap",
+            "search_job_context",
+            "custom",
+          ])
+          .optional(),
+      }),
+      execute: async (proposal) =>
+        saveApprovedWorkflow({
+          userId,
+          proposal: {
+            ...proposal,
+            toolName:
+              proposal.toolName ??
+              inferToolName(proposal.goal, proposal.allowedTools),
+          },
+        }),
     }),
 
     save_company_preference: tool({
@@ -204,19 +206,15 @@ export function createIrisTools(
         tags: z.string().optional().describe("Optional tags like recap, tone, crew"),
       }),
       execute: async ({ content, tags }) => {
-        const [ownerOrg] = await db
-          .select()
-          .from(orgs)
-          .where(eq(orgs.ownerUserId, userId))
-          .limit(1);
-        if (!ownerOrg) {
+        const org = await getUserOrg(userId);
+        if (!org) {
           return { ok: false, message: "No company profile found yet." };
         }
 
         const id = nanoid();
         await db.insert(orgMemories).values({
           id,
-          orgId: ownerOrg.id,
+          orgId: org.id,
           content,
           tags: tags ?? null,
           sourceType: "pm_chat",

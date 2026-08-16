@@ -52,7 +52,7 @@ export async function runIrisAgent(
   user: User,
   userMessage: string,
   channel: "web" | "sms" = "web",
-  opts?: { skipUserSave?: boolean }
+  opts?: { skipUserSave?: boolean; mode?: "ask" | "build" }
 ) {
   if (!opts?.skipUserSave) {
     await saveMessage(user.id, "user", userMessage, channel);
@@ -74,10 +74,11 @@ export async function runIrisAgent(
 
   const history = await loadChatHistory(user.id);
   const { tools, getSmsSent } = buildIrisTools(user);
-  const systemPrompt = await buildSystemPrompt(
+  const systemPrompt = buildSystemPrompt(
     user,
     channel,
-    await getCompanyContextForUser(user.id)
+    await getCompanyContextForUser(user.id),
+    opts?.mode ?? "ask"
   );
 
   const result = streamText({
@@ -86,7 +87,7 @@ export async function runIrisAgent(
     messages: [...history, { role: "user", content: userMessage }],
     tools,
     stopWhen: stepCountIs(hasWebSearch() ? 8 : 5),
-    maxOutputTokens: channel === "sms" ? 400 : 700,
+    maxOutputTokens: channel === "sms" ? 400 : 1100,
   });
 
   const trimmed = (await collectStreamText(result)).trim() || "Got it.";
@@ -111,7 +112,7 @@ export async function runIrisAgentStream(
   user: User,
   userMessage: string,
   channel: "web" | "sms" = "web",
-  opts?: { skipUserSave?: boolean }
+  opts?: { skipUserSave?: boolean; mode?: "ask" | "build" }
 ) {
   if (!opts?.skipUserSave) {
     await saveMessage(user.id, "user", userMessage, channel);
@@ -133,10 +134,11 @@ export async function runIrisAgentStream(
 
   const history = await loadChatHistory(user.id);
   const { tools, getSmsSent } = buildIrisTools(user);
-  const systemPrompt = await buildSystemPrompt(
+  const systemPrompt = buildSystemPrompt(
     user,
     channel,
-    await getCompanyContextForUser(user.id)
+    await getCompanyContextForUser(user.id),
+    opts?.mode ?? "ask"
   );
 
   const result = streamText({
@@ -145,7 +147,7 @@ export async function runIrisAgentStream(
     messages: [...history, { role: "user", content: userMessage }],
     tools,
     stopWhen: stepCountIs(hasWebSearch() ? 8 : 5),
-    maxOutputTokens: channel === "sms" ? 400 : 700,
+    maxOutputTokens: channel === "sms" ? 400 : 1100,
   });
 
   return { stream: result, demo: false, getSmsSent };
@@ -170,6 +172,9 @@ function getDemoReply(user: User, msg: string): string {
   }
   if (lower.includes("remind")) {
     return "On it — once API keys are set, I'll schedule that reminder and text you. Try adding OPENROUTER_API_KEY.";
+  }
+  if (lower.includes("build") || lower.includes("every friday") || lower.includes("workflow")) {
+    return "Describe the tool. Once OpenRouter is set, I'll propose it and save it only after you approve.";
   }
   return "Got it. (Demo mode — add OPENROUTER_API_KEY in .env.local for full Iris.)";
 }

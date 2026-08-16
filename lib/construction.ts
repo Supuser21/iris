@@ -162,6 +162,133 @@ export async function getCompanyContextForOrg(
   };
 }
 
+const QUERY_STOP_WORDS = new Set([
+  "the",
+  "what",
+  "who",
+  "has",
+  "have",
+  "hasnt",
+  "haven't",
+  "hasn't",
+  "for",
+  "and",
+  "are",
+  "was",
+  "last",
+  "this",
+  "that",
+  "with",
+  "from",
+  "your",
+  "about",
+  "after",
+  "before",
+  "every",
+  "which",
+  "open",
+  "need",
+  "needs",
+  "tell",
+  "show",
+  "give",
+  "draft",
+  "text",
+  "everyone",
+]);
+
+export function tokenizeQuery(query: string) {
+  return query
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((token) => token.length >= 3 && !QUERY_STOP_WORDS.has(token));
+}
+
+export async function getOrgJobs(orgId: string) {
+  return db.select().from(jobs).where(eq(jobs.orgId, orgId)).orderBy(desc(jobs.createdAt));
+}
+
+export function jobMatchesQuery(
+  job: { name: string; address: string | null },
+  query: string
+) {
+  const haystack = `${job.name} ${job.address ?? ""}`.toLowerCase();
+  const trimmed = query.trim().toLowerCase();
+  if (trimmed && haystack.includes(trimmed)) return true;
+  return tokenizeQuery(query).some((token) => haystack.includes(token));
+}
+
+export async function resolveJobsForQuery(orgId: string, query?: string | null) {
+  const all = await getOrgJobs(orgId);
+  if (!query?.trim()) return all;
+  const matched = all.filter((job) => jobMatchesQuery(job, query));
+  return matched.length > 0 ? matched : all;
+}
+
+export type FollowUpRow = {
+  jobId: string;
+  jobName: string;
+  personId: string;
+  name: string;
+  role: string | null;
+  phone: string;
+  lastOutboundAt: string | null;
+  lastOutboundBody: string | null;
+  lastReplyAt: string | null;
+  lastReplyBody: string | null;
+  status: "not_sent" | "sent_no_reply" | "replied";
+};
+
+export async function getFollowUpForJobs(jobList: { id: string; name: string }[]) {
+  const rows: FollowUpRow[] = [];
+  for (const job of jobList) {
+    const [crew, outbound, replies] = await Promise.all([
+      getOwnedPeople(job.id),
+      db
+        .select()
+        .from(outboundMessages)
+        .where(eq(outboundMessages.jobId, job.id))
+        .orderBy(desc(outboundMessages.createdAt)),
+      db
+        .select()
+        .from(inboundReplies)
+        .where(eq(inboundReplies.jobId, job.id))
+        .orderBy(desc(inboundReplies.createdAt)),
+    ]);
+
+    for (const person of crew) {
+      const lastOutbound = outbound.find(
+        (item) => item.personId === person.id || item.phone === person.phone
+      );
+      const lastReply = replies.find(
+        (item) => item.personId === person.id || item.phone === person.phone
+      );
+      const outboundTime = lastOutbound?.createdAt?.getTime() ?? 0;
+      const replyTime = lastReply?.createdAt?.getTime() ?? 0;
+      const status: FollowUpRow["status"] = !lastOutbound
+        ? "not_sent"
+        : lastReply && replyTime >= outboundTime
+          ? "replied"
+          : "sent_no_reply";
+
+      rows.push({
+        jobId: job.id,
+        jobName: job.name,
+        personId: person.id,
+        name: person.name,
+        role: person.role,
+        phone: person.phone,
+        lastOutboundAt: lastOutbound?.createdAt?.toISOString() ?? null,
+        lastOutboundBody: lastOutbound?.body ?? null,
+        lastReplyAt: lastReply?.createdAt?.toISOString() ?? null,
+        lastReplyBody: lastReply?.body ?? null,
+        status,
+      });
+    }
+  }
+  return rows;
+}
+
 export async function getOwnedPeople(jobId: string) {
   const links = await db.select().from(jobPeople).where(eq(jobPeople.jobId, jobId));
   const ids = links.map((row) => row.personId);

@@ -7,6 +7,11 @@ keeps replies on the right job.
 The commercial offer is **$4,000/month** for Iris, a tool-building chat, and
 implementation sprints.
 
+Company data is isolated by `org_id` in **Neon Postgres** (cloud, not your
+laptop). Each construction company is one org. Jobs, crew, documents, meetings,
+replies, and company memory all belong to that org. Invited PMs share the same
+org. Personal chat history stays per user.
+
 ## Product loop
 
 1. Create a job.
@@ -67,6 +72,15 @@ Iris outbound text to that phone number.
 
 **Compliance:** STOP, START, and HELP are handled. Crew/user opt-out is stored.
 
+## Workflows
+
+Iris can answer job questions with sources, run starter workflows (who hasn't
+replied, job risk brief, missed-meeting recap), and save a new tool after you
+approve it in **Build a tool** chat.
+
+Load the Riverside demo from `/jobs` to walk a sales call: schedule change sent,
+Jen replied, Mike has not.
+
 ## Connectors
 
 The UI has request-only stubs for Telegram, Microsoft Teams, Procore, Email,
@@ -89,8 +103,9 @@ instance.
 | `/` | Marketing landing |
 | `/signup` | Phone OTP signup |
 | `/chat` | Web chat with Iris |
-| `/jobs` | Job workspace home |
+| `/jobs` | Job workspace home, workflows, Riverside demo |
 | `/jobs/[id]` | Crew, docs, meeting drafts, sends, replies |
+| `/chat?mode=build` | Propose and save a company workflow |
 | `/settings` | Calendar, briefs, team access, connector requests |
 | `/api/cron/process` | Due reminders + morning briefs |
 | `/api/health/sms` | SMS/cron env checklist |

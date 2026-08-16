@@ -3,11 +3,17 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth/session";
 import { ChatInterface } from "@/components/chat/chat-interface";
 
-export default async function ChatPage() {
+export default async function ChatPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ mode?: string }>;
+}) {
   const session = await getSession();
   if (!session.userId) {
     redirect("/signup");
   }
+
+  const { mode } = await searchParams;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -24,7 +30,7 @@ export default async function ChatPage() {
           </Link>
         </nav>
       </header>
-      <ChatInterface />
+      <ChatInterface initialMode={mode === "build" ? "build" : "ask"} />
     </div>
   );
 }

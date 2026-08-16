@@ -25,10 +25,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { message } = await req.json();
+  const { message, mode } = await req.json();
   if (!message || typeof message !== "string") {
     return NextResponse.json({ error: "Message required" }, { status: 400 });
   }
+  const agentMode = mode === "build" ? "build" : "ask";
 
   const [user] = await db
     .select()
@@ -60,6 +61,7 @@ export async function POST(req: Request) {
     const agentUser = updated ?? user;
     const result = await runIrisAgentStream(agentUser, message, "web", {
       skipUserSave: lookup,
+      mode: agentMode,
     });
 
     if (result.demo || !result.stream) {
@@ -73,6 +75,7 @@ export async function POST(req: Request) {
 
   const result = await runIrisAgentStream(user, message, "web", {
     skipUserSave: lookup,
+    mode: agentMode,
   });
 
   if (result.demo || !result.stream) {

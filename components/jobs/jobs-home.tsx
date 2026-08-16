@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { WorkflowsPanel } from "@/components/jobs/workflows-panel";
 
 type Org = {
   id: string;
@@ -242,6 +243,8 @@ export function JobsHome() {
           {error || notice}
         </div>
       )}
+
+      <WorkflowsPanel />
 
       <section className="grid gap-8 lg:grid-cols-[0.85fr,1.15fr]">
         <div className="rounded-2xl border border-border bg-card p-6 space-y-4">

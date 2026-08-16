@@ -255,4 +255,32 @@ export async function initDb() {
   `;
   await sql`ALTER TABLE people ADD COLUMN IF NOT EXISTS sms_opt_out BOOLEAN DEFAULT FALSE`;
   await sql`ALTER TABLE meetings ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'draft'`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS org_workflows (
+      id TEXT PRIMARY KEY,
+      org_id TEXT NOT NULL REFERENCES orgs(id),
+      name TEXT NOT NULL,
+      trigger_phrase TEXT NOT NULL,
+      goal TEXT NOT NULL,
+      output_type TEXT NOT NULL,
+      allowed_tools TEXT NOT NULL,
+      tool_name TEXT NOT NULL,
+      kind TEXT NOT NULL DEFAULT 'custom',
+      created_by_user_id TEXT NOT NULL REFERENCES users(id),
+      active BOOLEAN NOT NULL DEFAULT TRUE,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    );
+  `;
+  await sql`
+    CREATE TABLE IF NOT EXISTS workflow_runs (
+      id TEXT PRIMARY KEY,
+      workflow_id TEXT NOT NULL REFERENCES org_workflows(id),
+      job_id TEXT REFERENCES jobs(id),
+      input TEXT NOT NULL,
+      output TEXT NOT NULL,
+      status TEXT NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+  `;
 }
