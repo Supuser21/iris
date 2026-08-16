@@ -106,23 +106,26 @@ export function PhoneMockup() {
           </p>
 
           <Bubble variant="incoming">
-            Good morning. Your 5pm with Sarah is the one that matters today.
+            Heads up - Riverside owner call moved the pour to Thursday 6am.
           </Bubble>
           <Bubble variant="incoming">
-            The deck still needs the final slide — want me to remind you at
-            4:15?
+            Mike wasn&apos;t on the call. I drafted the recap and flagged rebar for
+            him.
           </Bubble>
 
           <div className="h-1" />
 
-          <Bubble variant="outgoing">yes please</Bubble>
-          <Bubble variant="incoming">On it — I&apos;ll text you then.</Bubble>
+          <Bubble variant="outgoing">send it and cc Jen</Bubble>
+          <Bubble variant="incoming">
+            Done. Mike has the update. Jen got the same note.
+          </Bubble>
 
           <Bubble variant="outgoing">
-            Also remind me to get Anna a birthday gift Friday
+            what changed besides the pour
           </Bubble>
           <Bubble variant="incoming">
-            Done. Friday morning. I&apos;ll keep it short.
+            Delivery slid to 10, inspection is still 9, and the owner wants the
+            deck revision before end of day.
           </Bubble>
         </div>
 

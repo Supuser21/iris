@@ -2,16 +2,19 @@ export function getAppUrl() {
   return process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 }
 
+export function getDemoUrl() {
+  return process.env.NEXT_PUBLIC_DEMO_URL ?? "https://cal.com/patrykk";
+}
+
 export function hasOpenRouter() {
   return Boolean(process.env.OPENROUTER_API_KEY);
 }
 
+import { hasSms } from "@/lib/sms";
+
+/** @deprecated Use hasSms() */
 export function hasTwilio() {
-  return Boolean(
-    process.env.TWILIO_ACCOUNT_SID &&
-      process.env.TWILIO_AUTH_TOKEN &&
-      process.env.TWILIO_PHONE_NUMBER
-  );
+  return hasSms();
 }
 
 export function hasGoogleOAuth() {
@@ -21,5 +24,12 @@ export function hasGoogleOAuth() {
 }
 
 export function isDevOtpMode() {
-  return process.env.DEV_OTP_MODE === "true" || !hasTwilio();
+  return process.env.DEV_OTP_MODE === "true" || !hasSms();
+}
+
+export function hasWebSearch() {
+  return (
+    hasOpenRouter() ||
+    Boolean(process.env.TAVILY_API_KEY || process.env.SERPER_API_KEY)
+  );
 }

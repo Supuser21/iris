@@ -7,9 +7,9 @@ const geist = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "Iris — Your personal AI executive assistant",
+  title: "Iris — AI Follow-Up for Construction Teams",
   description:
-    "Iris texts you what you need before you need it. Reminders, tasks, calendar briefs — via SMS or web.",
+    "Iris helps construction owners and ops leaders standardize follow-up across every job with crew texts, meeting recaps, and searchable job context.",
 };
 
 export default function RootLayout({
