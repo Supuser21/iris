@@ -13,6 +13,7 @@ const PROVIDERS = new Set([
   "procore",
   "email",
   "drive",
+  "inventory",
   "stripe",
 ]);
 

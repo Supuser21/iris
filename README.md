@@ -84,8 +84,18 @@ Jen replied, Mike has not.
 ## Connectors
 
 The UI has request-only stubs for Telegram, Microsoft Teams, Procore, Email,
-Google Drive, and Stripe. They do not run OAuth yet. A requested connector marks
-what should be enabled in a future implementation sprint.
+Google Drive, Inventory, and Stripe. They do not run OAuth yet. A requested
+connector marks what should be enabled in a future implementation sprint.
+
+## Twilio A2P
+
+Public URLs for campaign registration:
+
+- Privacy: `https://talkwithiris.xyz/privacy`
+- Terms: `https://talkwithiris.xyz/terms`
+
+Signup requires an SMS consent checkbox. The privacy policy states that mobile
+numbers and SMS consent are not shared with third parties for marketing.
 
 ## Health check
 
@@ -101,6 +111,8 @@ instance.
 | Route | Description |
 |-------|-------------|
 | `/` | Marketing landing |
+| `/privacy` | Public privacy policy (Twilio A2P) |
+| `/terms` | Public terms and SMS program (Twilio A2P) |
 | `/signup` | Phone OTP signup |
 | `/chat` | Web chat with Iris |
 | `/jobs` | Job workspace home, workflows, Riverside demo |

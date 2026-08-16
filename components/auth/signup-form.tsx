@@ -14,11 +14,16 @@ export function SignupForm() {
   const [devCode, setDevCode] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [smsConsent, setSmsConsent] = useState(false);
 
   async function sendOtp() {
     setError("");
     if (!isValidUsPhone(phoneInput)) {
       setError("Enter your 10-digit US number (e.g. 4155550123)");
+      return;
+    }
+    if (!smsConsent) {
+      setError("Confirm you agree to receive SMS from Iris");
       return;
     }
     setLoading(true);
@@ -97,10 +102,32 @@ export function SignupForm() {
           <p className="text-xs text-muted">
             US numbers only — enter 10 digits, with or without spaces or dashes.
           </p>
+          <label className="flex items-start gap-3 text-xs leading-relaxed text-muted">
+            <input
+              type="checkbox"
+              checked={smsConsent}
+              onChange={(e) => setSmsConsent(e.target.checked)}
+              className="mt-0.5"
+            />
+            <span>
+              I agree to receive SMS from Iris, including a one-time code, account
+              messages, job updates, and alerts about connected company data.
+              Message frequency varies. Message and data rates may apply. Reply
+              STOP to opt out, HELP for help.{" "}
+              <a href="/privacy" className="underline hover:text-foreground">
+                Privacy Policy
+              </a>{" "}
+              and{" "}
+              <a href="/terms" className="underline hover:text-foreground">
+                Terms
+              </a>
+              .
+            </span>
+          </label>
           <Button
             className="w-full"
             onClick={sendOtp}
-            disabled={loading || !phoneInput.trim()}
+            disabled={loading || !phoneInput.trim() || !smsConsent}
           >
             Send code
           </Button>

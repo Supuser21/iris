@@ -40,9 +40,10 @@ export default function HomePage() {
         <div className="mt-16 flex justify-center">
           <PhoneMockup />
         </div>
-        <p className="mx-auto mt-6 max-w-xl text-xs text-muted">
-          US SMS only. Crew can reply for 7 days after the last Iris text.
-        </p>
+          <p className="mx-auto mt-6 max-w-xl text-xs text-muted">
+            US SMS via Twilio. Message frequency varies. Message and data rates
+            may apply. Reply STOP to opt out, HELP for help.
+          </p>
       </section>
 
       <section className="mx-auto max-w-5xl px-6 pb-24">
@@ -204,7 +205,15 @@ export default function HomePage() {
       </section>
 
       <footer className="border-t border-border py-8 text-center text-sm text-muted">
-        Iris — follow-up texts for construction.
+        <p>Iris — SaaS workspace and SMS for construction teams.</p>
+        <p className="mt-3 flex justify-center gap-4">
+          <Link href="/privacy" className="hover:text-foreground">
+            Privacy
+          </Link>
+          <Link href="/terms" className="hover:text-foreground">
+            Terms
+          </Link>
+        </p>
       </footer>
     </div>
   );

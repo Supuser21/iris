@@ -15,7 +15,15 @@ export default function SettingsPage() {
         </div>
         <h1 className="mt-6 text-2xl font-semibold">Settings</h1>
         <p className="mt-2 text-sm text-muted">
-          Connect what you want — or stay in reminders-only mode.
+          Connect what you want — or stay in reminders-only mode. SMS uses our
+          Twilio number.{" "}
+          <Link href="/privacy" className="underline hover:text-foreground">
+            Privacy
+          </Link>
+          {" · "}
+          <Link href="/terms" className="underline hover:text-foreground">
+            Terms
+          </Link>
         </p>
         <div className="mt-8">
           <SettingsForm />

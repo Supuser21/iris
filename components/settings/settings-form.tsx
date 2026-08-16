@@ -28,6 +28,7 @@ const INTEGRATIONS = [
   { id: "procore", name: "Procore", use: "Bring job context and documents into Iris." },
   { id: "email", name: "Email", use: "Draft and track owner or subcontractor emails." },
   { id: "drive", name: "Google Drive", use: "Read plans, awards, and job docs." },
+  { id: "inventory", name: "Inventory", use: "See stock and have Iris text about shortages or deliveries." },
   { id: "stripe", name: "Stripe", use: "Manage billing when you are ready." },
 ];
 
