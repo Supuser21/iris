@@ -19,20 +19,22 @@ export default function HomePage() {
 
       <section className="mx-auto max-w-6xl px-6 pb-24 pt-8 text-center md:pt-16">
         <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl md:text-6xl md:leading-tight">
-          Iris texts the people
+          The AI assistant
           <br className="hidden sm:block" />
           {" "}
-          who weren&apos;t in the meeting.
+          for construction teams.
         </h1>
-        <p className="mx-auto mt-6 max-w-xl text-lg text-muted">
-          Pour moved. Super missed the call. Recap goes out after you hit send.
+        <p className="mx-auto mt-6 max-w-2xl text-lg text-muted">
+          Iris drafts the job update, texts the crew, and keeps every reply on
+          the right job — so the field hears what changed before it costs you a
+          day.
         </p>
         <div className="mt-10 flex flex-wrap justify-center gap-4">
           <Link href={demoUrl} target="_blank" rel="noreferrer">
             <Button size="lg">Book demo</Button>
           </Link>
           <span className="flex items-center text-sm text-muted">
-            15 minutes. No app for the crew.
+            15-minute walkthrough on a real job.
           </span>
         </div>
         <div className="mt-16 flex justify-center">
@@ -59,10 +61,34 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="py-24">
+      <section className="border-t border-border py-24">
+        <div className="mx-auto max-w-6xl px-6">
+          <h2 className="text-center text-3xl font-semibold">
+            What teams say after they start using it.
+          </h2>
+          <div className="mt-12 grid gap-6 md:grid-cols-3">
+            {reviews.map((review) => (
+              <figure
+                key={review.name}
+                className="flex flex-col rounded-2xl border border-border bg-card p-6"
+              >
+                <blockquote className="flex-1 text-[15px] leading-relaxed text-foreground/90">
+                  “{review.quote}”
+                </blockquote>
+                <figcaption className="mt-6">
+                  <p className="text-sm font-semibold">{review.name}</p>
+                  <p className="text-sm text-muted">{review.role}</p>
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="border-t border-border bg-card py-24">
         <div className="mx-auto max-w-4xl px-6">
           <h2 className="mx-auto max-w-2xl text-center text-3xl font-semibold">
-            Stop paying people to chase jobsite texts.
+            One price. Iris, plus the work to make it yours.
           </h2>
           <div className="mt-12 grid gap-8 md:grid-cols-2">
             <div className="flex flex-col rounded-2xl border-2 border-border bg-[#f5f4f1] p-8">
@@ -71,10 +97,10 @@ export default function HomePage() {
                 Coordinator chasing texts
               </h3>
               <p className="mt-2 text-2xl font-semibold text-foreground">
-                $4k+ a month
+                Another hire
               </p>
               <p className="mt-1 text-sm font-medium text-muted">
-                Typical extra hire, still stuck in group threads
+                Salary, ramp time, and the same group threads
               </p>
               <ul className="mt-6 flex-1 space-y-2.5 text-sm font-medium text-foreground/85">
                 <li>Another salary on top of project overhead</li>
@@ -91,21 +117,24 @@ export default function HomePage() {
               </Link>
             </div>
             <div className="flex flex-col rounded-2xl border-2 border-accent bg-accent-light/30 p-8">
-              <p className="text-sm font-semibold text-accent">With Iris</p>
+              <p className="text-sm font-semibold text-accent">Iris</p>
               <h3 className="mt-1 text-2xl font-semibold tracking-tight text-accent">
-                Follow-up over SMS
+                Product, tools, and sprints
               </h3>
               <p className="mt-2 text-2xl font-semibold text-foreground">
-                Book a demo
+                $4,000
               </p>
               <p className="mt-1 text-sm font-medium text-muted">
-                Then we price it around your jobs and crew
+                Flat. We set it up around how your company already works.
               </p>
               <ul className="mt-6 flex-1 space-y-2.5 text-sm font-medium text-foreground/90">
-                <li>Preview every crew text before it sends</li>
-                <li>Crew needs no app or login</li>
-                <li>Replies come back on the job thread</li>
-                <li>Live in days, not weeks</li>
+                <li>Iris for job recaps, crew texts, and follow-up</li>
+                <li>
+                  Your own chat to build the tools you need from what Iris
+                  already connects to
+                </li>
+                <li>Implementation sprints, the way an agency would run them</li>
+                <li>Preview before send. Crew needs no app.</li>
               </ul>
               <Link
                 href={demoUrl}
@@ -159,5 +188,26 @@ const features = [
   {
     title: "Talk to Iris like a person",
     body: "Use SMS or web to ask what changed, send a recap, or pull up the latest decision.",
+  },
+];
+
+const reviews = [
+  {
+    name: "Marcus Hale",
+    role: "Owner, Hale & Sons Construction",
+    quote:
+      "We used to find out a change was missed two days later. Now the recap goes out the same afternoon and I can see who got it.",
+  },
+  {
+    name: "Dana Ruiz",
+    role: "Operations, Northline Builders",
+    quote:
+      "The crew never downloaded anything. They just text back. That was the whole reason this stuck.",
+  },
+  {
+    name: "Chris Pell",
+    role: "Project manager, Pell Contracting",
+    quote:
+      "I still approve every message. Iris drafts it, I send it. The field actually reads it because it sounds like us.",
   },
 ];
