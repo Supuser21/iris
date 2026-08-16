@@ -1,138 +1,163 @@
-import type { ReactNode } from "react";
-import { PhoneMockup, TextScene } from "@/components/landing/phone-mockup";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { PhoneMockup } from "@/components/landing/phone-mockup";
 import { getDemoUrl } from "@/lib/env";
-
-function DemoLink({
-  href,
-  children,
-  className = "",
-}: {
-  href: string;
-  children: ReactNode;
-  className?: string;
-}) {
-  return (
-    <a
-      href={href}
-      target={href.startsWith("http") ? "_blank" : undefined}
-      rel={href.startsWith("http") ? "noreferrer" : undefined}
-      className={`landing-cta px-8 py-4 text-lg ${className}`}
-    >
-      {children}
-    </a>
-  );
-}
-
-const TICKER = [
-  "pour Thursday 6am",
-  "cc Jen",
-  "rebar flagged",
-  "delivery slid to 10",
-  "inspection still 9",
-  "deck revision today",
-  "Mike missed the call",
-  "send it",
-];
-
-function TickerRow() {
-  return (
-    <div className="flex items-center gap-12">
-      {TICKER.map((t) => (
-        <span key={t} className="flex items-center gap-12">
-          <span className="text-sm text-white/35 sm:text-base">{t}</span>
-          <span className="h-1 w-1 rounded-full bg-white/25" />
-        </span>
-      ))}
-    </div>
-  );
-}
 
 export default function HomePage() {
   const demoUrl = getDemoUrl();
 
   return (
-    <div className="landing min-h-screen">
+    <div className="min-h-screen overflow-x-hidden">
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
-        <span className="landing-display text-2xl">Iris</span>
-        <nav className="flex items-center gap-6 text-sm">
-          <DemoLink href={demoUrl} className="px-5 py-2 text-sm">
-            Book demo
-          </DemoLink>
+        <span className="text-xl font-semibold tracking-tight">Iris</span>
+        <nav className="flex items-center gap-4 text-sm">
+          <Link href={demoUrl} target="_blank" rel="noreferrer">
+            <Button size="sm">Book demo</Button>
+          </Link>
         </nav>
       </header>
 
-      <section className="relative overflow-hidden px-6 pb-16 pt-14 md:pt-20">
-        <div className="landing-marquee absolute inset-x-0 top-8 hidden md:block">
-          <div className="landing-marquee-track">
-            <TickerRow />
-            <TickerRow />
+      <section className="mx-auto max-w-6xl px-6 pb-24 pt-8 text-center md:pt-16">
+        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl md:text-6xl md:leading-tight">
+          Iris texts the people
+          <br className="hidden sm:block" />
+          {" "}
+          who weren&apos;t in the meeting.
+        </h1>
+        <p className="mx-auto mt-6 max-w-xl text-lg text-muted">
+          Pour moved. Super missed the call. Recap goes out after you hit send.
+        </p>
+        <div className="mt-10 flex flex-wrap justify-center gap-4">
+          <Link href={demoUrl} target="_blank" rel="noreferrer">
+            <Button size="lg">Book demo</Button>
+          </Link>
+          <span className="flex items-center text-sm text-muted">
+            15 minutes. No app for the crew.
+          </span>
+        </div>
+        <div className="mt-16 flex justify-center">
+          <PhoneMockup />
+        </div>
+      </section>
+
+      <section className="border-t border-border bg-card py-24">
+        <div className="mx-auto max-w-6xl px-6">
+          <h2 className="text-center text-3xl font-semibold">
+            Follow-up that fits the jobsite.
+          </h2>
+          <div className="mt-16 grid gap-12 md:grid-cols-2">
+            {features.map((f, i) => (
+              <div key={f.title} className="space-y-3">
+                <span className="text-sm font-medium text-accent">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <h3 className="text-xl font-semibold">{f.title}</h3>
+                <p className="leading-relaxed text-muted">{f.body}</p>
+              </div>
+            ))}
           </div>
         </div>
+      </section>
 
-        <div className="mx-auto grid max-w-6xl items-center gap-16 md:pt-24 lg:grid-cols-[1.1fr,0.9fr]">
-          <div>
-            <h1 className="landing-display text-5xl leading-[0.98] md:text-7xl">
-              Iris texts the people
-              <br />
-              who weren’t in the meeting.
-            </h1>
-            <p className="landing-muted mt-6 max-w-xl text-lg leading-relaxed md:text-xl">
-              Pour moved. Super missed the call. Recap goes out after you hit
-              send.
-            </p>
-            <div className="mt-10">
-              <DemoLink href={demoUrl}>Book demo</DemoLink>
+      <section className="py-24">
+        <div className="mx-auto max-w-4xl px-6">
+          <h2 className="mx-auto max-w-2xl text-center text-3xl font-semibold">
+            Stop paying people to chase jobsite texts.
+          </h2>
+          <div className="mt-12 grid gap-8 md:grid-cols-2">
+            <div className="flex flex-col rounded-2xl border-2 border-border bg-[#f5f4f1] p-8">
+              <p className="text-sm font-semibold text-muted">Traditional</p>
+              <h3 className="mt-1 text-2xl font-semibold tracking-tight text-foreground">
+                Coordinator chasing texts
+              </h3>
+              <p className="mt-2 text-2xl font-semibold text-foreground">
+                $4k+ a month
+              </p>
+              <p className="mt-1 text-sm font-medium text-muted">
+                Typical extra hire, still stuck in group threads
+              </p>
+              <ul className="mt-6 flex-1 space-y-2.5 text-sm font-medium text-foreground/85">
+                <li>Another salary on top of project overhead</li>
+                <li>Updates still live in scattered texts</li>
+                <li>Takes weeks to ramp on your jobs</li>
+              </ul>
+              <Link
+                href={demoUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-8 inline-block"
+              >
+                <Button variant="secondary">Book demo</Button>
+              </Link>
+            </div>
+            <div className="flex flex-col rounded-2xl border-2 border-accent bg-accent-light/30 p-8">
+              <p className="text-sm font-semibold text-accent">With Iris</p>
+              <h3 className="mt-1 text-2xl font-semibold tracking-tight text-accent">
+                Follow-up over SMS
+              </h3>
+              <p className="mt-2 text-2xl font-semibold text-foreground">
+                Book a demo
+              </p>
+              <p className="mt-1 text-sm font-medium text-muted">
+                Then we price it around your jobs and crew
+              </p>
+              <ul className="mt-6 flex-1 space-y-2.5 text-sm font-medium text-foreground/90">
+                <li>Preview every crew text before it sends</li>
+                <li>Crew needs no app or login</li>
+                <li>Replies come back on the job thread</li>
+                <li>Live in days, not weeks</li>
+              </ul>
+              <Link
+                href={demoUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-8 inline-block"
+              >
+                <Button>Book demo</Button>
+              </Link>
             </div>
           </div>
-
-          <div className="flex justify-center lg:justify-end">
-            <PhoneMockup />
-          </div>
         </div>
       </section>
 
-      <section className="border-t border-[#26241f] px-6 py-28 md:py-36">
-        <div className="mx-auto max-w-4xl">
-          <h2 className="landing-display text-4xl leading-tight md:text-6xl">
-            Iris fits the jobsite,
-            <br />
-            not the other way around.
-          </h2>
-          <div className="landing-muted mt-12 space-y-6 text-xl leading-relaxed md:text-2xl">
-            <p>Lives in SMS — no app for the crew.</p>
-            <p>You preview every text before it sends.</p>
-            <p>Replies come back to the PM, on that job.</p>
-          </div>
-        </div>
+      <section className="border-t border-border bg-accent py-20 text-center text-white">
+        <h2 className="text-3xl font-semibold">
+          One missed handoff can cost a day.
+        </h2>
+        <Link
+          href={demoUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-8 inline-block"
+        >
+          <Button size="lg" className="bg-white text-accent hover:bg-white/90">
+            Book demo
+          </Button>
+        </Link>
       </section>
 
-      <section className="border-t border-[#26241f] px-6 py-28 md:py-36">
-        <div className="mx-auto max-w-3xl">
-          <h2 className="landing-display text-4xl leading-tight md:text-6xl">
-            The pour moved Thursday.
-            <br />
-            Here’s what the field got.
-          </h2>
-          <TextScene className="mt-12" />
-        </div>
-      </section>
-
-      <section className="border-t border-[#26241f] px-6 py-32 text-center md:py-44">
-        <div className="mx-auto max-w-4xl">
-          <h2 className="landing-display text-4xl leading-tight md:text-6xl">
-            One missed handoff
-            <br />
-            can cost a day.
-          </h2>
-          <div className="mt-12">
-            <DemoLink href={demoUrl}>Book demo</DemoLink>
-          </div>
-        </div>
-      </section>
-
-      <footer className="landing-muted border-t border-[#26241f] px-6 py-8 text-center text-sm">
-        Iris — the follow-up text for construction.
+      <footer className="border-t border-border py-8 text-center text-sm text-muted">
+        Iris — follow-up texts for construction.
       </footer>
     </div>
   );
 }
+
+const features = [
+  {
+    title: "Recap while the meeting is still warm",
+    body: "Drop in notes or a transcript. Iris pulls out what changed, who missed it, and who needs the update.",
+  },
+  {
+    title: "Preview every crew text before it sends",
+    body: "The PM stays in control. Iris drafts the message; you approve the recipients and copy.",
+  },
+  {
+    title: "Replies come back to the PM, on that job",
+    body: "Crew can answer by text. Iris keeps the reply with the right job instead of another loose thread.",
+  },
+  {
+    title: "Talk to Iris like a person",
+    body: "Use SMS or web to ask what changed, send a recap, or pull up the latest decision.",
+  },
+];

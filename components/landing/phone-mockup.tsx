@@ -11,7 +11,7 @@ function Bubble({
   return (
     <div className={`flex ${isIncoming ? "justify-start" : "justify-end"}`}>
       <div
-        className={`relative max-w-[78%] px-3.5 py-2 text-[14px] leading-[1.3] tracking-[-0.015em] ${
+        className={`relative max-w-[76%] px-3.5 py-2 text-[14px] leading-[1.28] tracking-[-0.015em] ${
           isIncoming
             ? "rounded-[19px] rounded-bl-[5px] bg-[#E9E9EB] text-[#111111] after:absolute after:bottom-0 after:left-[-5px] after:h-3 after:w-3 after:rounded-br-full after:bg-[#E9E9EB]"
             : "rounded-[19px] rounded-br-[5px] bg-[#0A84FF] text-white after:absolute after:bottom-0 after:right-[-5px] after:h-3 after:w-3 after:rounded-bl-full after:bg-[#0A84FF]"
@@ -26,12 +26,12 @@ function Bubble({
 export function PhoneMockup({ className = "" }: { className?: string }) {
   return (
     <div
-      className={`relative mx-auto w-[300px] rounded-[3rem] bg-[#0f0f10] p-[9px] shadow-[0_40px_120px_rgba(0,0,0,0.75)] ring-1 ring-white/10 ${className}`}
+      className={`relative mx-auto h-[610px] w-[300px] rounded-[3rem] bg-[#1c1c1e] p-[9px] shadow-[0_30px_80px_rgba(0,0,0,0.22)] ring-1 ring-black/20 ${className}`}
     >
-      <div className="absolute left-1/2 top-[18px] z-30 h-[26px] w-[92px] -translate-x-1/2 rounded-full bg-[#0f0f10]" />
+      <div className="absolute left-1/2 top-[18px] z-30 h-[26px] w-[92px] -translate-x-1/2 rounded-full bg-[#1c1c1e]" />
 
       <div
-        className="flex h-full min-h-[560px] flex-col overflow-hidden rounded-[2.35rem] bg-white"
+        className="flex h-full flex-col overflow-hidden rounded-[2.35rem] bg-white"
         style={{
           fontFamily:
             '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif',
@@ -91,7 +91,7 @@ export function PhoneMockup({ className = "" }: { className?: string }) {
               </svg>
             </div>
             <div className="flex flex-col items-center">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#e8a54b] to-[#b06f1c] text-sm font-semibold text-black shadow-inner">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#2d5a4a] to-[#18392f] text-sm font-semibold text-white shadow-inner">
                 I
               </div>
               <span className="mt-1 text-[11px] font-medium text-black">
@@ -141,78 +141,6 @@ export function PhoneMockup({ className = "" }: { className?: string }) {
             </div>
           </div>
         </div>
-      </div>
-    </div>
-  );
-}
-
-function PlainBubble({
-  children,
-  variant,
-}: {
-  children: ReactNode;
-  variant: "incoming" | "outgoing";
-}) {
-  const isIncoming = variant === "incoming";
-  return (
-    <div className={`flex ${isIncoming ? "justify-start" : "justify-end"}`}>
-      <div
-        className={`max-w-[80%] px-4 py-2.5 text-[15px] leading-snug tracking-[-0.01em] ${
-          isIncoming
-            ? "rounded-[19px] rounded-bl-[5px] bg-[#26262a] text-[#f4f1ea]"
-            : "rounded-[19px] rounded-br-[5px] bg-[#0A84FF] text-white"
-        }`}
-      >
-        {children}
-      </div>
-    </div>
-  );
-}
-
-const SCENE: Array<{
-  variant: "incoming" | "outgoing";
-  text: ReactNode;
-  meta?: string;
-}> = [
-  {
-    variant: "incoming",
-    text: "Riverside owner call just wrapped. Pour moved to Thursday 6am.",
-  },
-  {
-    variant: "incoming",
-    text: "Mike wasn’t on the call. I drafted the recap and flagged rebar.",
-  },
-  { variant: "outgoing", text: "send it and cc Jen" },
-  {
-    variant: "incoming",
-    text: "Done. Mike has it. Jen got the same note.",
-    meta: "Sent after you approved it.",
-  },
-  { variant: "outgoing", text: "what else changed" },
-  {
-    variant: "incoming",
-    text: "Delivery slid to 10. Inspection still 9. Owner wants the deck revision today.",
-  },
-];
-
-export function TextScene({ className = "" }: { className?: string }) {
-  return (
-    <div
-      className={`w-full rounded-2xl border border-white/10 bg-black/40 p-5 sm:p-6 ${className}`}
-      style={{
-        fontFamily:
-          '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif',
-      }}
-    >
-      <div className="space-y-2.5">
-        {SCENE.map((m, i) => (
-          <div key={i}>
-            <PlainBubble variant={m.variant}>{m.text}</PlainBubble>
-            {m.meta ? (
-              <p className="mt-1 pl-1 text-[11px] text-white/40">{m.meta}</p>
-            ) : null}
-          </div>
-        ))}
       </div>
     </div>
   );
