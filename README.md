@@ -99,7 +99,7 @@ Returns env checklist (no secrets). Fix any listed `issues` before debugging fur
 
 Reminders and morning briefs run from `GET /api/cron/process` (authorized with `Authorization: Bearer CRON_SECRET`).
 
-- **Vercel cron** ([`vercel.json`](vercel.json)): `*/5 * * * *` (every 5 minutes). Requires a Vercel plan that supports frequent crons; Hobby may only allow daily — if reminders stay late, use an external scheduler.
+- **Vercel cron** ([`vercel.json`](vercel.json)): `0 13 * * *` (once daily, Hobby-compatible). Frequent crons fail the Hobby deploy.
 - **External scheduler (recommended on Hobby):** [cron-job.org](https://cron-job.org) or similar → `GET https://talkwithiris.xyz/api/cron/process` every **5 minutes** with header `Authorization: Bearer <CRON_SECRET>`.
 
 Response includes `ranAt`, `remindersSent`, and `briefsSent` for monitoring.
