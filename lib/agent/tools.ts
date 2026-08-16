@@ -2,17 +2,44 @@ import { tool } from "ai";
 import { z } from "zod";
 import { nanoid } from "nanoid";
 import { db } from "@/lib/db";
-import { memories, tasks, reminders } from "@/lib/db/schema";
-import { eq, and, desc, lte } from "drizzle-orm";
+import {
+  jobDocuments,
+  jobs,
+  meetings,
+  memories,
+  orgMemories,
+  orgs,
+  people,
+  reminders,
+  tasks,
+} from "@/lib/db/schema";
+import { eq, and, desc, inArray, lte } from "drizzle-orm";
 import { users } from "@/lib/db/schema";
 import type { User } from "@/lib/db/schema";
 import { getCalendarEvents } from "@/lib/google-calendar";
-import { sendSms } from "@/lib/twilio";
+import { fetchDailyBriefData } from "@/lib/cron/daily-brief";
+import { parseMeetingExtract } from "@/lib/construction";
+import { sendSms } from "@/lib/sms";
+import { fetchWebPage } from "@/lib/web/fetch-page";
 
-export function createIrisTools(user: User) {
+export function createIrisTools(
+  user: User,
+  callbacks?: { onSmsSent?: () => void }
+) {
   const userId = user.id;
 
   return {
+    read_webpage: tool({
+      description:
+        "Fetch readable text from a public URL the user gave or you found via search",
+      inputSchema: z.object({
+        url: z.string().describe("Full https URL"),
+      }),
+      execute: async ({ url }) => {
+        const content = await fetchWebPage(url);
+        return { url, content };
+      },
+    }),
     save_memory: tool({
       description: "Save a fact or preference about the user for long-term memory",
       inputSchema: z.object({
@@ -45,6 +72,158 @@ export function createIrisTools(user: User) {
             (m.tags?.toLowerCase().includes(q) ?? false)
         );
         return { memories: matched.slice(0, 10).map((m) => m.content) };
+      },
+    }),
+
+    search_job_context: tool({
+      description:
+        "Search construction job notes, meeting summaries, crew, company preferences, and job names before answering project questions",
+      inputSchema: z.object({
+        query: z.string().describe("Job question or search phrase"),
+      }),
+      execute: async ({ query }) => {
+        const [ownerOrg] = await db
+          .select()
+          .from(orgs)
+          .where(eq(orgs.ownerUserId, userId))
+          .limit(1);
+        if (!ownerOrg) return { matches: [] };
+
+        const ownedJobs = await db
+          .select()
+          .from(jobs)
+          .where(eq(jobs.orgId, ownerOrg.id))
+          .orderBy(desc(jobs.createdAt));
+        const jobIds = ownedJobs.map((job) => job.id);
+        const q = query.toLowerCase();
+
+        const [docs, meetingRows, crew, companyMemories] = await Promise.all([
+          jobIds.length === 0
+            ? Promise.resolve([])
+            : db.select().from(jobDocuments).where(inArray(jobDocuments.jobId, jobIds)),
+          jobIds.length === 0
+            ? Promise.resolve([])
+            : db.select().from(meetings).where(inArray(meetings.jobId, jobIds)),
+          db.select().from(people).where(eq(people.orgId, ownerOrg.id)),
+          db
+            .select()
+            .from(orgMemories)
+            .where(eq(orgMemories.orgId, ownerOrg.id))
+            .orderBy(desc(orgMemories.createdAt)),
+        ]);
+
+        const matches: Array<{
+          type: string;
+          jobName: string;
+          title: string;
+          snippet: string;
+        }> = [];
+
+        for (const job of ownedJobs) {
+          const haystack = `${job.name} ${job.address ?? ""}`.toLowerCase();
+          if (haystack.includes(q)) {
+            matches.push({
+              type: "job",
+              jobName: job.name,
+              title: job.name,
+              snippet: job.address ?? "Active job",
+            });
+          }
+        }
+
+        for (const person of crew) {
+          const haystack = `${person.name} ${person.role ?? ""}`.toLowerCase();
+          if (haystack.includes(q)) {
+            matches.push({
+              type: "crew",
+              jobName: "Crew",
+              title: person.name,
+              snippet: person.role ?? "Crew member",
+            });
+          }
+        }
+
+        for (const doc of docs) {
+          const jobName = ownedJobs.find((job) => job.id === doc.jobId)?.name ?? "Job";
+          const haystack = `${doc.title} ${doc.content}`.toLowerCase();
+          if (!haystack.includes(q)) continue;
+          const content = doc.content.replace(/\s+/g, " ").trim();
+          matches.push({
+            type: doc.source,
+            jobName,
+            title: doc.title,
+            snippet: content.slice(0, 220),
+          });
+        }
+
+        for (const meeting of meetingRows) {
+          const jobName =
+            ownedJobs.find((job) => job.id === meeting.jobId)?.name ?? "Job";
+          const parsed = parseMeetingExtract(meeting.extracted);
+          const haystack = [
+            meeting.title,
+            meeting.transcript,
+            parsed.draftRecap,
+            parsed.decisions.join(" "),
+            parsed.owners.map((owner) => `${owner.name} ${owner.task}`).join(" "),
+          ]
+            .join(" ")
+            .toLowerCase();
+          if (!haystack.includes(q)) continue;
+          matches.push({
+            type: "meeting",
+            jobName,
+            title: meeting.title,
+            snippet:
+              parsed.draftRecap ||
+              parsed.decisions.join("; ") ||
+              meeting.transcript.slice(0, 220),
+          });
+        }
+
+        for (const memory of companyMemories) {
+          const haystack = `${memory.content} ${memory.tags ?? ""}`.toLowerCase();
+          if (!haystack.includes(q)) continue;
+          matches.push({
+            type: "company_memory",
+            jobName: ownerOrg.name,
+            title: memory.tags || "Company preference",
+            snippet: memory.content,
+          });
+        }
+
+        return { matches: matches.slice(0, 10) };
+      },
+    }),
+
+    save_company_preference: tool({
+      description:
+        "Save a company-specific preference, habit, or communication rule so Iris adapts to that firm's style",
+      inputSchema: z.object({
+        content: z.string().describe("The company-specific preference to remember"),
+        tags: z.string().optional().describe("Optional tags like recap, tone, crew"),
+      }),
+      execute: async ({ content, tags }) => {
+        const [ownerOrg] = await db
+          .select()
+          .from(orgs)
+          .where(eq(orgs.ownerUserId, userId))
+          .limit(1);
+        if (!ownerOrg) {
+          return { ok: false, message: "No company profile found yet." };
+        }
+
+        const id = nanoid();
+        await db.insert(orgMemories).values({
+          id,
+          orgId: ownerOrg.id,
+          content,
+          tags: tags ?? null,
+          sourceType: "pm_chat",
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+        return { ok: true, id, message: "Saved as a company preference." };
       },
     }),
 
@@ -172,7 +351,8 @@ export function createIrisTools(user: User) {
     }),
 
     get_calendar_events: tool({
-      description: "Get upcoming Google Calendar events if connected",
+      description:
+        "Get Google Calendar events when the user has connected Google in Settings",
       inputSchema: z.object({
         days: z.number().optional().default(1),
       }),
@@ -190,42 +370,16 @@ export function createIrisTools(user: User) {
     generate_daily_brief: tool({
       description: "Generate a morning brief for the user",
       inputSchema: z.object({}),
-      execute: async () => {
-        const openTasks = await db
-          .select()
-          .from(tasks)
-          .where(and(eq(tasks.userId, userId), eq(tasks.completed, false)));
-        const mems = await db
-          .select()
-          .from(memories)
-          .where(eq(memories.userId, userId))
-          .orderBy(desc(memories.createdAt))
-          .limit(5);
-        const upcoming = await db
-          .select()
-          .from(reminders)
-          .where(
-            and(eq(reminders.userId, userId), eq(reminders.cancelled, false))
-          );
-        const cal = await getCalendarEvents(user, 1);
-        return {
-          tasks: openTasks.map((t) => t.title),
-          memories: mems.map((m) => m.content),
-          reminders: upcoming
-            .filter((r) => r.dueAt > new Date())
-            .slice(0, 5)
-            .map((r) => ({ message: r.message, dueAt: r.dueAt.toISOString() })),
-          calendar: cal,
-        };
-      },
+      execute: async () => fetchDailyBriefData(user),
     }),
 
     send_sms: tool({
       description:
-        "Send an SMS to the user. Use sparingly for proactive nudges.",
+        "Send an SMS to the user's phone. On SMS channel, use this to deliver links when they say send/text me the link — put the full https URL in the message body.",
       inputSchema: z.object({ message: z.string() }),
       execute: async ({ message }) => {
         await sendSms(user.phone, message);
+        callbacks?.onSmsSent?.();
         return { ok: true };
       },
     }),
@@ -252,6 +406,7 @@ export async function processDueReminders() {
       .where(eq(users.id, r.userId))
       .limit(1);
     if (!u) continue;
+    if (u.smsOptOut) continue;
     await sendSms(u.phone, r.message);
     if (r.repeatRule === "yearly") {
       const next = new Date(r.dueAt);

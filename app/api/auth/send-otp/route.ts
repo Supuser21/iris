@@ -3,15 +3,23 @@ import { nanoid } from "nanoid";
 import { db } from "@/lib/db";
 import { otpCodes } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
-import { sendSms } from "@/lib/twilio";
+import { sendSms } from "@/lib/sms";
 import { ensureDb } from "@/lib/init";
 import { isDevOtpMode } from "@/lib/env";
+import { isValidUsPhone, normalizePhone } from "@/lib/phone";
 
 export async function POST(req: Request) {
-  ensureDb();
+  await ensureDb();
   const { phone } = await req.json();
   if (!phone || typeof phone !== "string") {
     return NextResponse.json({ error: "Phone required" }, { status: 400 });
+  }
+
+  if (!isValidUsPhone(phone)) {
+    return NextResponse.json(
+      { error: "Enter a valid US phone number (10 digits)" },
+      { status: 400 }
+    );
   }
 
   const normalized = normalizePhone(phone);
@@ -30,19 +38,13 @@ export async function POST(req: Request) {
 
   if (isDevOtpMode()) {
     console.log(`[OTP dev] ${normalized}: ${code}`);
-    return NextResponse.json({ ok: true, devCode: code });
+    return NextResponse.json({ ok: true, devCode: code, phone: normalized });
   }
 
   await sendSms(
     normalized,
-    `Your Iris code is ${code}. Expires in 10 minutes.`
+    `Your Iris code is ${code}. Expires in 10 minutes.`,
+    { bypassOptOut: true }
   );
-  return NextResponse.json({ ok: true });
-}
-
-function normalizePhone(phone: string) {
-  const digits = phone.replace(/\D/g, "");
-  if (digits.startsWith("1") && digits.length === 11) return `+${digits}`;
-  if (digits.length === 10) return `+1${digits}`;
-  return phone.startsWith("+") ? phone : `+${digits}`;
+  return NextResponse.json({ ok: true, phone: normalized });
 }

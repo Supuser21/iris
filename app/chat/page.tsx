@@ -16,6 +16,9 @@ export default async function ChatPage() {
           Iris
         </Link>
         <nav className="flex gap-4 text-sm text-muted">
+          <Link href="/jobs" className="hover:text-foreground">
+            Jobs
+          </Link>
           <Link href="/settings" className="hover:text-foreground">
             Settings
           </Link>

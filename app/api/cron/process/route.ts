@@ -10,12 +10,16 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  ensureDb();
+  await ensureDb();
+  const ranAt = new Date().toISOString();
   const remindersSent = await processDueReminders();
   const briefsSent = await sendMorningBriefs();
 
+  console.info("[cron/process]", { ranAt, remindersSent, briefsSent });
+
   return NextResponse.json({
     ok: true,
+    ranAt,
     remindersSent,
     briefsSent,
   });

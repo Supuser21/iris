@@ -4,7 +4,6 @@ import { eq } from "drizzle-orm";
 import type { User } from "@/lib/db/schema";
 import { nanoid } from "nanoid";
 import { memories, reminders } from "@/lib/db/schema";
-
 export type OnboardingStep =
   | "welcome"
   | "name"
@@ -15,18 +14,62 @@ export type OnboardingStep =
   | "try_reminder"
   | "complete";
 
+export const SMS_ONBOARDING_WELCOME =
+  "Hey — I'm Iris. I keep jobs moving, text the right follow-up, and stay on top of the details people drop. Reply here to finish setup. First up — what's your name?";
+
+export function isOnboardingSkip(message: string): boolean {
+  const lower = message.toLowerCase().trim();
+  return (
+    lower === "skip" ||
+    lower === "no" ||
+    lower === "nah" ||
+    lower === "nope" ||
+    lower.includes("not now") ||
+    lower.includes("no thanks") ||
+    lower.includes("later") ||
+    lower.includes("reminders only") ||
+    lower.includes("just reminders") ||
+    lower.includes("without calendar") ||
+    lower === "text only"
+  );
+}
+
+/** Short reply when advanceOnboarding did not accept the message (SMS). */
+export function getOnboardingSmsNudge(user: User): string | null {
+  let step = (user.onboardingStep ?? "welcome") as OnboardingStep;
+  if (step === "calendar") step = "brief_time";
+
+  switch (step) {
+    case "welcome":
+    case "name":
+      return "What should I call you? (Reply skip to jump to reminders only.)";
+    case "timezone":
+      return 'What timezone are you in? (e.g. "America/New_York" or "EST" — or skip)';
+    case "birthday":
+      return 'Send your birthday like "March 15" or "3/15" for a yearly reminder — or reply skip.';
+    case "brief_time":
+      return 'What time for a morning brief? (e.g. "7:00" or "7am" — or skip)';
+    case "try_reminder":
+      return 'Try one — e.g. "remind me tomorrow at 9am to call mom" — or reply skip to finish.';
+    default:
+      return null;
+  }
+}
+
 export async function advanceOnboarding(
   user: User,
   message: string
 ): Promise<{ step: OnboardingStep; updates: Partial<User> }> {
-  const lower = message.toLowerCase().trim();
-  const skip =
-    lower === "skip" ||
-    lower.includes("reminders only") ||
-    lower.includes("just reminders");
+  const skip = isOnboardingSkip(message);
 
-  const step = (user.onboardingStep ?? "welcome") as OnboardingStep;
+  let step = (user.onboardingStep ?? "welcome") as OnboardingStep;
   const updates: Record<string, unknown> = {};
+
+  // Calendar step removed — migrate anyone still on it
+  if (step === "calendar") {
+    step = "brief_time";
+    updates.onboardingStep = "brief_time";
+  }
 
   if (step === "welcome" || step === "name") {
     if (skip) {
@@ -53,8 +96,8 @@ export async function advanceOnboarding(
 
   if (step === "birthday") {
     if (skip) {
-      updates.onboardingStep = "calendar";
-      return { step: "calendar", updates: updates as Partial<User> };
+      updates.onboardingStep = "brief_time";
+      return { step: "brief_time", updates: updates as Partial<User> };
     }
     const parsed = parseBirthday(message);
     if (parsed) {
@@ -72,18 +115,9 @@ export async function advanceOnboarding(
         dueAt: due,
         repeatRule: "yearly",
       });
-      updates.onboardingStep = "calendar";
-      return { step: "calendar", updates: updates as Partial<User> };
+      updates.onboardingStep = "brief_time";
+      return { step: "brief_time", updates: updates as Partial<User> };
     }
-  }
-
-  if (step === "calendar") {
-    updates.onboardingStep = skip ? "try_reminder" : "brief_time";
-    if (skip) updates.onboardingComplete = true;
-    return {
-      step: skip ? "try_reminder" : "brief_time",
-      updates: updates as Partial<User>,
-    };
   }
 
   if (step === "brief_time") {

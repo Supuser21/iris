@@ -4,9 +4,10 @@ import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { ensureDb } from "@/lib/init";
+import { hasGoogleOAuth } from "@/lib/env";
 
 export async function GET() {
-  ensureDb();
+  await ensureDb();
   const session = await getSession();
   if (!session.userId) {
     return NextResponse.json({ user: null });
@@ -16,5 +17,23 @@ export async function GET() {
     .from(users)
     .where(eq(users.id, session.userId))
     .limit(1);
-  return NextResponse.json({ user: user ?? null });
+  if (!user) {
+    return NextResponse.json({ user: null });
+  }
+
+  const {
+    googleAccessToken,
+    googleRefreshToken,
+    googleTokenExpiry,
+    ...safeUser
+  } = user;
+  return NextResponse.json({
+    user: {
+      ...safeUser,
+      googleCalendarConnected: Boolean(
+        googleRefreshToken || googleAccessToken
+      ),
+      googleOAuthConfigured: hasGoogleOAuth(),
+    },
+  });
 }

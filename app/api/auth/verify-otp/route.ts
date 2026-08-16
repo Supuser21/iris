@@ -6,10 +6,13 @@ import { eq, and, gt } from "drizzle-orm";
 import { getSession } from "@/lib/auth/session";
 import { ensureDb } from "@/lib/init";
 import { WELCOME_MESSAGE } from "@/lib/agent/system-prompt";
-import { sendSms } from "@/lib/twilio";
+import { SMS_ONBOARDING_WELCOME } from "@/lib/onboarding";
+import { sendSms } from "@/lib/sms";
+import { normalizePhone } from "@/lib/phone";
+import { ensureOwnerOrg } from "@/lib/construction";
 
 export async function POST(req: Request) {
-  ensureDb();
+  await ensureDb();
   const { phone, code } = await req.json();
   if (!phone || !code) {
     return NextResponse.json({ error: "Phone and code required" }, { status: 400 });
@@ -38,6 +41,8 @@ export async function POST(req: Request) {
     .where(eq(users.phone, normalized))
     .limit(1);
 
+  const isNewUser = !user;
+
   if (!user) {
     const id = nanoid();
     await db.insert(users).values({
@@ -55,9 +60,30 @@ export async function POST(req: Request) {
       content: WELCOME_MESSAGE,
       channel: "web",
     });
-
-    await sendSms(normalized, WELCOME_MESSAGE.split("\n\n")[0] + " Open the app to continue setup.");
   }
+
+  const needsOnboardingSms =
+    !user!.onboardingComplete &&
+    (user!.onboardingStep === "welcome" || !user!.onboardingStep);
+
+  let smsOnboardingSent = false;
+  if (needsOnboardingSms) {
+    await db.insert(messages).values({
+      id: nanoid(),
+      userId: user!.id,
+      role: "assistant",
+      content: SMS_ONBOARDING_WELCOME,
+      channel: "sms",
+    });
+    try {
+      await sendSms(normalized, SMS_ONBOARDING_WELCOME, { bypassOptOut: true });
+      smsOnboardingSent = true;
+    } catch (err) {
+      console.error("[verify-otp] onboarding SMS failed", err);
+    }
+  }
+
+  await ensureOwnerOrg(user!.id, user!.name);
 
   const session = await getSession();
   session.userId = user!.id;
@@ -70,12 +96,7 @@ export async function POST(req: Request) {
     ok: true,
     userId: user!.id,
     onboardingComplete: user!.onboardingComplete,
+    smsOnboardingSent,
+    isNewUser,
   });
-}
-
-function normalizePhone(phone: string) {
-  const digits = phone.replace(/\D/g, "");
-  if (digits.startsWith("1") && digits.length === 11) return `+${digits}`;
-  if (digits.length === 10) return `+1${digits}`;
-  return phone.startsWith("+") ? phone : `+${digits}`;
 }

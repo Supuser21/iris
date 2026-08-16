@@ -5,16 +5,19 @@ import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { ensureDb } from "@/lib/init";
 import {
+  collectStreamText,
   runIrisAgentStream,
   saveMessage,
+  sendLookupAck,
 } from "@/lib/agent/run";
+import { needsWebLookup } from "@/lib/agent/lookup";
 import {
   advanceOnboarding,
   applyOnboardingUpdates,
 } from "@/lib/onboarding";
 
 export async function POST(req: Request) {
-  ensureDb();
+  await ensureDb();
   const session = await getSession();
   if (!session.userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -35,6 +38,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
+  const lookup = needsWebLookup(message);
+  let ack: string | undefined;
+  if (lookup) {
+    await saveMessage(user.id, "user", message, "web");
+    ack = await sendLookupAck(user.id, "web");
+  }
+
   if (!user.onboardingComplete) {
     const { updates } = await advanceOnboarding(user, message);
     if (Object.keys(updates).length > 0) {
@@ -46,32 +56,28 @@ export async function POST(req: Request) {
       .where(eq(users.id, user.id))
       .limit(1);
     const agentUser = updated ?? user;
-    const result = await runIrisAgentStream(agentUser, message, "web");
+    const result = await runIrisAgentStream(agentUser, message, "web", {
+      skipUserSave: lookup,
+    });
 
     if (result.demo || !result.stream) {
-      return NextResponse.json({ text: result.text, demo: true });
+      return NextResponse.json({ text: result.text, ack, demo: true });
     }
 
-    let fullText = "";
-    for await (const chunk of result.stream.textStream) {
-      fullText += chunk;
-    }
-    const trimmed = fullText.trim() || "Got it.";
+    const trimmed = (await collectStreamText(result.stream)).trim() || "Got it.";
     await saveMessage(user.id, "assistant", trimmed, "web");
-    return NextResponse.json({ text: trimmed, demo: false });
+    return NextResponse.json({ text: trimmed, ack, demo: false });
   }
 
-  const result = await runIrisAgentStream(user, message, "web");
+  const result = await runIrisAgentStream(user, message, "web", {
+    skipUserSave: lookup,
+  });
 
   if (result.demo || !result.stream) {
-    return NextResponse.json({ text: result.text, demo: true });
+    return NextResponse.json({ text: result.text, ack, demo: true });
   }
 
-  let fullText = "";
-  for await (const chunk of result.stream.textStream) {
-    fullText += chunk;
-  }
-  const trimmed = fullText.trim() || "Got it.";
+  const trimmed = (await collectStreamText(result.stream)).trim() || "Got it.";
   await saveMessage(user.id, "assistant", trimmed, "web");
-  return NextResponse.json({ text: trimmed, demo: false });
+  return NextResponse.json({ text: trimmed, ack, demo: false });
 }

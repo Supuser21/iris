@@ -6,7 +6,7 @@ import { eq } from "drizzle-orm";
 import { ensureDb } from "@/lib/init";
 
 export async function PATCH(req: Request) {
-  ensureDb();
+  await ensureDb();
   const session = await getSession();
   if (!session.userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

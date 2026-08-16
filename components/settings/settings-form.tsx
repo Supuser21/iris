@@ -12,7 +12,8 @@ type User = {
   timezone: string | null;
   morningBriefTime: string | null;
   morningBriefEnabled: boolean | null;
-  googleAccessToken: string | null;
+  googleCalendarConnected?: boolean;
+  googleOAuthConfigured?: boolean;
 };
 
 const TIMEZONES = [
@@ -73,23 +74,6 @@ export function SettingsForm() {
 
   return (
     <div className="space-y-8">
-      <section className="rounded-2xl border border-border bg-card p-6">
-        <h2 className="text-lg font-semibold">Google Calendar</h2>
-        <p className="mt-1 text-sm text-muted">
-          Optional — unlock morning briefs and meeting heads-ups.
-        </p>
-        {user.googleAccessToken ? (
-          <p className="mt-4 text-sm text-accent">Connected</p>
-        ) : (
-          <a
-            href="/api/auth/google"
-            className="mt-4 inline-flex rounded-full bg-accent-light px-6 py-3 text-sm font-medium text-accent hover:bg-[#dce8e3]"
-          >
-            Connect Google Calendar
-          </a>
-        )}
-      </section>
-
       <section className="rounded-2xl border border-border bg-card p-6 space-y-4">
         <h2 className="text-lg font-semibold">Timezone</h2>
         <select
@@ -105,8 +89,30 @@ export function SettingsForm() {
         </select>
       </section>
 
+      {user.googleOAuthConfigured && (
+        <section className="rounded-2xl border border-border bg-card p-6 space-y-4">
+          <h2 className="text-lg font-semibold">Google Calendar</h2>
+          <p className="text-sm text-muted">
+            Connect so morning briefs and Iris can see today&apos;s events.
+          </p>
+          {user.googleCalendarConnected ? (
+            <p className="text-sm text-accent font-medium">Connected</p>
+          ) : (
+            <a
+              href="/api/auth/google"
+              className="inline-flex rounded-full border border-border px-4 py-2 text-sm font-medium hover:bg-card"
+            >
+              Connect Google Calendar
+            </a>
+          )}
+        </section>
+      )}
+
       <section className="rounded-2xl border border-border bg-card p-6 space-y-4">
         <h2 className="text-lg font-semibold">Morning brief</h2>
+        <p className="text-sm text-muted">
+          Daily SMS summary of your tasks and reminders.
+        </p>
         <label className="flex items-center gap-2 text-sm">
           <input
             type="checkbox"
@@ -128,8 +134,7 @@ export function SettingsForm() {
       <Button onClick={save}>{saved ? "Saved!" : "Save settings"}</Button>
 
       <p className="text-sm text-muted">
-        Reminders-only mode works without calendar. Text Iris anytime at{" "}
-        <span className="font-mono">{user.phone}</span>.
+        Text Iris anytime at <span className="font-mono">{user.phone}</span>.
       </p>
     </div>
   );

@@ -1,10 +1,10 @@
 import { initDb } from "@/lib/db";
 
-let initialized = false;
+let initPromise: Promise<void> | null = null;
 
-export function ensureDb() {
-  if (!initialized) {
-    initDb();
-    initialized = true;
+export async function ensureDb() {
+  if (!initPromise) {
+    initPromise = initDb();
   }
+  await initPromise;
 }

@@ -3,7 +3,7 @@ export function getAppUrl() {
 }
 
 export function getDemoUrl() {
-  return process.env.NEXT_PUBLIC_DEMO_URL ?? "https://cal.com/patrykk";
+  return process.env.NEXT_PUBLIC_DEMO_URL ?? "https://cal.com/patrykk/demo-call";
 }
 
 export function hasOpenRouter() {

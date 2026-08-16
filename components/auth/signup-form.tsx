@@ -3,10 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { formatPhoneDisplay, isValidUsPhone } from "@/lib/phone";
 
 export function SignupForm() {
   const router = useRouter();
-  const [phone, setPhone] = useState("");
+  const [phoneInput, setPhoneInput] = useState("");
+  const [phoneE164, setPhoneE164] = useState("");
   const [code, setCode] = useState("");
   const [step, setStep] = useState<"phone" | "code">("phone");
   const [devCode, setDevCode] = useState<string | null>(null);
@@ -15,15 +17,20 @@ export function SignupForm() {
 
   async function sendOtp() {
     setError("");
+    if (!isValidUsPhone(phoneInput)) {
+      setError("Enter your 10-digit US number (e.g. 4155550123)");
+      return;
+    }
     setLoading(true);
     try {
       const res = await fetch("/api/auth/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone }),
+        body: JSON.stringify({ phone: phoneInput.trim() }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Failed");
+      if (data.phone) setPhoneE164(data.phone);
       if (data.devCode) setDevCode(data.devCode);
       setStep("code");
     } catch (e) {
@@ -40,10 +47,22 @@ export function SignupForm() {
       const res = await fetch("/api/auth/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone, code }),
+        body: JSON.stringify({
+          phone: phoneE164 || phoneInput.trim(),
+          code,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Invalid code");
+      if (!data.onboardingComplete && data.smsOnboardingSent) {
+        alert(
+          "You're in! Check your phone — Iris just texted you. Reply with your name to finish setup."
+        );
+      } else if (!data.onboardingComplete) {
+        alert(
+          "You're in! We couldn't send the setup text — finish setup in chat or try signup again."
+        );
+      }
       router.push("/chat");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Invalid code");
@@ -52,26 +71,44 @@ export function SignupForm() {
     }
   }
 
+  const displayPhone = phoneE164
+    ? formatPhoneDisplay(phoneE164)
+    : phoneInput.trim()
+      ? formatPhoneDisplay(phoneInput)
+      : "";
+
   return (
     <div className="mx-auto w-full max-w-sm space-y-4">
       {step === "phone" ? (
         <>
-          <label className="block text-sm text-muted">Phone number</label>
+          <label className="block text-sm text-muted" htmlFor="phone">
+            Phone number
+          </label>
           <input
+            id="phone"
             type="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="+1 555 000 0000"
+            inputMode="tel"
+            autoComplete="tel-national"
+            value={phoneInput}
+            onChange={(e) => setPhoneInput(e.target.value)}
+            placeholder="4155550123"
             className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm outline-none focus:border-accent"
           />
-          <Button className="w-full" onClick={sendOtp} disabled={loading || !phone}>
+          <p className="text-xs text-muted">
+            US numbers only — enter 10 digits, with or without spaces or dashes.
+          </p>
+          <Button
+            className="w-full"
+            onClick={sendOtp}
+            disabled={loading || !phoneInput.trim()}
+          >
             Send code
           </Button>
         </>
       ) : (
         <>
           <p className="text-sm text-muted">
-            Enter the code we sent to {phone}
+            Enter the code we sent to {displayPhone}
             {devCode && (
               <span className="mt-2 block font-mono text-accent">
                 Dev code: {devCode}
@@ -80,8 +117,10 @@ export function SignupForm() {
           </p>
           <input
             type="text"
+            inputMode="numeric"
+            autoComplete="one-time-code"
             value={code}
-            onChange={(e) => setCode(e.target.value)}
+            onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
             placeholder="123456"
             className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm outline-none focus:border-accent"
           />
@@ -91,7 +130,12 @@ export function SignupForm() {
           <button
             type="button"
             className="w-full text-sm text-muted hover:text-foreground"
-            onClick={() => setStep("phone")}
+            onClick={() => {
+              setStep("phone");
+              setPhoneE164("");
+              setDevCode(null);
+              setCode("");
+            }}
           >
             Change number
           </button>

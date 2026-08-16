@@ -10,7 +10,8 @@ export default function SignupPage() {
         </Link>
         <h1 className="mt-8 text-2xl font-semibold">Get started</h1>
         <p className="mt-2 text-sm text-muted">
-          Enter your phone number. Iris works via SMS and web — same assistant.
+          Enter your US mobile number (10 digits is fine — no +1 needed). Iris works
+          via SMS and web.
         </p>
         <div className="mt-8">
           <SignupForm />

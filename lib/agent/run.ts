@@ -1,13 +1,15 @@
 import { streamText, stepCountIs } from "ai";
-import { getOpenRouterModel } from "@/lib/openrouter";
+import { getOpenRouterModel, getOpenRouterWebSearchTool } from "@/lib/openrouter";
 import { buildSystemPrompt } from "@/lib/agent/system-prompt";
 import { createIrisTools } from "@/lib/agent/tools";
+import { getCompanyContextForUser } from "@/lib/construction";
 import type { User } from "@/lib/db/schema";
 import { db } from "@/lib/db";
 import { messages } from "@/lib/db/schema";
 import { nanoid } from "nanoid";
 import { eq, desc } from "drizzle-orm";
-import { hasOpenRouter } from "@/lib/env";
+import { hasOpenRouter, hasWebSearch } from "@/lib/env";
+import { getLookupAck } from "@/lib/agent/lookup";
 
 export async function loadChatHistory(userId: string, limit = 30) {
   const rows = await db
@@ -37,17 +39,29 @@ export async function saveMessage(
   });
 }
 
+export async function sendLookupAck(
+  userId: string,
+  channel: "web" | "sms"
+): Promise<string> {
+  const ack = getLookupAck(channel);
+  await saveMessage(userId, "assistant", ack, channel);
+  return ack;
+}
+
 export async function runIrisAgent(
   user: User,
   userMessage: string,
-  channel: "web" | "sms" = "web"
+  channel: "web" | "sms" = "web",
+  opts?: { skipUserSave?: boolean }
 ) {
-  await saveMessage(user.id, "user", userMessage, channel);
+  if (!opts?.skipUserSave) {
+    await saveMessage(user.id, "user", userMessage, channel);
+  }
 
   if (!hasOpenRouter()) {
     const fallback = getDemoReply(user, userMessage);
     await saveMessage(user.id, "assistant", fallback, channel);
-    return { text: fallback, demo: true };
+    return { text: fallback, demo: true, smsSent: false };
   }
 
   const model = getOpenRouterModel();
@@ -55,37 +69,53 @@ export async function runIrisAgent(
     const fallback =
       "I'm having trouble connecting right now. Add OPENROUTER_API_KEY to enable chat.";
     await saveMessage(user.id, "assistant", fallback, channel);
-    return { text: fallback, demo: true };
+    return { text: fallback, demo: true, smsSent: false };
   }
 
   const history = await loadChatHistory(user.id);
-  const tools = createIrisTools(user);
+  const { tools, getSmsSent } = buildIrisTools(user);
+  const systemPrompt = await buildSystemPrompt(
+    user,
+    channel,
+    await getCompanyContextForUser(user.id)
+  );
 
   const result = streamText({
     model,
-    system: buildSystemPrompt(user),
+    system: systemPrompt,
     messages: [...history, { role: "user", content: userMessage }],
     tools,
-    stopWhen: stepCountIs(5),
-    maxOutputTokens: 500,
+    stopWhen: stepCountIs(hasWebSearch() ? 8 : 5),
+    maxOutputTokens: channel === "sms" ? 400 : 700,
   });
 
-  let fullText = "";
-  for await (const chunk of result.textStream) {
-    fullText += chunk;
-  }
-
-  const trimmed = fullText.trim() || "Got it.";
+  const trimmed = (await collectStreamText(result)).trim() || "Got it.";
   await saveMessage(user.id, "assistant", trimmed, channel);
-  return { text: trimmed, demo: false };
+  return { text: trimmed, demo: false, smsSent: getSmsSent() };
+}
+
+export async function collectStreamText(result: {
+  text: PromiseLike<string>;
+  textStream: AsyncIterable<string>;
+}): Promise<string> {
+  const full = await result.text;
+  if (full.trim()) return full;
+  let streamed = "";
+  for await (const chunk of result.textStream) {
+    streamed += chunk;
+  }
+  return streamed;
 }
 
 export async function runIrisAgentStream(
   user: User,
   userMessage: string,
-  channel: "web" | "sms" = "web"
+  channel: "web" | "sms" = "web",
+  opts?: { skipUserSave?: boolean }
 ) {
-  await saveMessage(user.id, "user", userMessage, channel);
+  if (!opts?.skipUserSave) {
+    await saveMessage(user.id, "user", userMessage, channel);
+  }
 
   if (!hasOpenRouter()) {
     const fallback = getDemoReply(user, userMessage);
@@ -102,18 +132,35 @@ export async function runIrisAgentStream(
   }
 
   const history = await loadChatHistory(user.id);
-  const tools = createIrisTools(user);
+  const { tools, getSmsSent } = buildIrisTools(user);
+  const systemPrompt = await buildSystemPrompt(
+    user,
+    channel,
+    await getCompanyContextForUser(user.id)
+  );
 
   const result = streamText({
     model,
-    system: buildSystemPrompt(user),
+    system: systemPrompt,
     messages: [...history, { role: "user", content: userMessage }],
     tools,
-    stopWhen: stepCountIs(5),
-    maxOutputTokens: 500,
+    stopWhen: stepCountIs(hasWebSearch() ? 8 : 5),
+    maxOutputTokens: channel === "sms" ? 400 : 700,
   });
 
-  return { stream: result, demo: false };
+  return { stream: result, demo: false, getSmsSent };
+}
+
+function buildIrisTools(user: User) {
+  let smsSent = false;
+  const irisTools = createIrisTools(user, {
+    onSmsSent: () => {
+      smsSent = true;
+    },
+  });
+  const webSearch = getOpenRouterWebSearchTool();
+  const tools = webSearch ? { ...irisTools, web_search: webSearch } : irisTools;
+  return { tools, getSmsSent: () => smsSent };
 }
 
 function getDemoReply(user: User, msg: string): string {
