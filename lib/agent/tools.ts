@@ -399,6 +399,7 @@ export async function processDueReminders() {
       )
     );
 
+  let sentCount = 0;
   for (const r of due) {
     const [u] = await db
       .select()
@@ -408,6 +409,7 @@ export async function processDueReminders() {
     if (!u) continue;
     if (u.smsOptOut) continue;
     await sendSms(u.phone, r.message);
+    sentCount += 1;
     if (r.repeatRule === "yearly") {
       const next = new Date(r.dueAt);
       next.setFullYear(next.getFullYear() + 1);
@@ -434,5 +436,5 @@ export async function processDueReminders() {
         .where(eq(reminders.id, r.id));
     }
   }
-  return due.length;
+  return sentCount;
 }

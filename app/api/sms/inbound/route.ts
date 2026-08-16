@@ -20,12 +20,14 @@ import { handleSmsCompliance } from "@/lib/sms/compliance";
 import { parseInboundSms } from "@/lib/sms/inbound";
 import { normalizePhone } from "@/lib/phone";
 import { nanoid } from "nanoid";
+import { runDueWorkInBackground } from "@/lib/cron/process";
 
 /** Agent + tools can exceed default 10s on Vercel Hobby. */
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
   await ensureDb();
+  runDueWorkInBackground();
   const parsed = await parseInboundSms(req);
   if (!parsed) {
     console.warn("[sms/inbound] invalid payload");

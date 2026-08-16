@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { nanoid } from "nanoid";
 import { db } from "@/lib/db";
-import { otpCodes, users, messages } from "@/lib/db/schema";
+import { messages, orgInvites, orgMembers, otpCodes, users } from "@/lib/db/schema";
 import { eq, and, gt } from "drizzle-orm";
 import { getSession } from "@/lib/auth/session";
 import { ensureDb } from "@/lib/init";
@@ -83,7 +83,36 @@ export async function POST(req: Request) {
     }
   }
 
-  await ensureOwnerOrg(user!.id, user!.name);
+  const [invite] = await db
+    .select()
+    .from(orgInvites)
+    .where(and(eq(orgInvites.phone, normalized), eq(orgInvites.status, "pending")))
+    .limit(1);
+
+  if (invite) {
+    const [existingMember] = await db
+      .select()
+      .from(orgMembers)
+      .where(
+        and(eq(orgMembers.orgId, invite.orgId), eq(orgMembers.userId, user!.id))
+      )
+      .limit(1);
+    if (!existingMember) {
+      await db.insert(orgMembers).values({
+        id: nanoid(),
+        orgId: invite.orgId,
+        userId: user!.id,
+        role: invite.role,
+        createdAt: new Date(),
+      });
+    }
+    await db
+      .update(orgInvites)
+      .set({ status: "accepted", updatedAt: new Date() })
+      .where(eq(orgInvites.id, invite.id));
+  } else {
+    await ensureOwnerOrg(user!.id, user!.name);
+  }
 
   const session = await getSession();
   session.userId = user!.id;

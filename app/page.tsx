@@ -40,6 +40,44 @@ export default function HomePage() {
         <div className="mt-16 flex justify-center">
           <PhoneMockup />
         </div>
+        <p className="mx-auto mt-6 max-w-xl text-xs text-muted">
+          US SMS only. Crew can reply for 7 days after the last Iris text.
+        </p>
+      </section>
+
+      <section className="mx-auto max-w-5xl px-6 pb-24">
+        <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
+          <div className="grid gap-6 lg:grid-cols-[0.9fr,1.1fr]">
+            <div>
+              <p className="text-sm font-medium text-accent">Riverside Apartments</p>
+              <h2 className="mt-2 text-2xl font-semibold">Job workspace</h2>
+              <p className="mt-3 text-sm leading-relaxed text-muted">
+                One place for crew, notes, meeting drafts, and the exact follow-up status.
+              </p>
+              <div className="mt-6 space-y-3 text-sm">
+                <div className="rounded-xl border border-border bg-background px-4 py-3">
+                  <p className="font-medium">Mike Alvarez</p>
+                  <p className="text-muted">Super · sent · no reply yet</p>
+                </div>
+                <div className="rounded-xl border border-border bg-background px-4 py-3">
+                  <p className="font-medium">Jen Walsh</p>
+                  <p className="text-muted">PM · sent · replied</p>
+                </div>
+              </div>
+            </div>
+            <div className="rounded-2xl border border-border bg-background p-5">
+              <p className="text-sm font-medium text-accent">Draft review</p>
+              <h3 className="mt-2 text-lg font-semibold">Owner call recap</h3>
+              <p className="mt-3 whitespace-pre-wrap rounded-xl border border-border bg-card p-4 text-sm leading-relaxed">
+                Riverside: pour moved to Thursday 6am. Rebar inspection stays at 9. Delivery slid to 10. Mike missed the call — send him the update and cc Jen.
+              </p>
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                <Button>Send recap</Button>
+                <span className="text-sm text-muted">You approve before anything goes out.</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
       <section className="border-t border-border bg-card py-24">
@@ -64,7 +102,7 @@ export default function HomePage() {
       <section className="border-t border-border py-24">
         <div className="mx-auto max-w-6xl px-6">
           <h2 className="text-center text-3xl font-semibold">
-            What teams say after they start using it.
+            Example stories from construction teams.
           </h2>
           <div className="mt-12 grid gap-6 md:grid-cols-3">
             {reviews.map((review) => (
@@ -122,10 +160,10 @@ export default function HomePage() {
                 Product, tools, and sprints
               </h3>
               <p className="mt-2 text-2xl font-semibold text-foreground">
-                $4,000
+                $4,000 / month
               </p>
               <p className="mt-1 text-sm font-medium text-muted">
-                Flat. We set it up around how your company already works.
+                Iris plus monthly sprints to make it work like your company.
               </p>
               <ul className="mt-6 flex-1 space-y-2.5 text-sm font-medium text-foreground/90">
                 <li>Iris for job recaps, crew texts, and follow-up</li>

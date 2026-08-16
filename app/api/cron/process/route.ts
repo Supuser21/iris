@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { ensureDb } from "@/lib/init";
-import { processDueReminders } from "@/lib/agent/tools";
-import { sendMorningBriefs } from "@/lib/cron/morning-brief";
+import { runDueWork } from "@/lib/cron/process";
 
 export async function GET(req: Request) {
   const auth = req.headers.get("authorization");
@@ -11,16 +10,10 @@ export async function GET(req: Request) {
   }
 
   await ensureDb();
-  const ranAt = new Date().toISOString();
-  const remindersSent = await processDueReminders();
-  const briefsSent = await sendMorningBriefs();
-
-  console.info("[cron/process]", { ranAt, remindersSent, briefsSent });
+  const result = await runDueWork();
 
   return NextResponse.json({
     ok: true,
-    ranAt,
-    remindersSent,
-    briefsSent,
+    ...result,
   });
 }

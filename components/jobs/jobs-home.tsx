@@ -27,12 +27,29 @@ type OrgMemory = {
   sourceType: string;
 };
 
+type OrgIntegration = {
+  id: string;
+  provider: string;
+  status: string;
+};
+
+const INTEGRATIONS = [
+  { id: "telegram", name: "Telegram", use: "Crew and PM follow-up in Telegram." },
+  { id: "teams", name: "Microsoft Teams", use: "Pull meeting context and post recaps." },
+  { id: "procore", name: "Procore", use: "Bring job context and documents into Iris." },
+  { id: "email", name: "Email", use: "Draft and track owner or subcontractor emails." },
+  { id: "drive", name: "Google Drive", use: "Read plans, awards, and job docs." },
+  { id: "stripe", name: "Stripe", use: "Manage billing when you are ready." },
+];
+
 export function JobsHome() {
   const [org, setOrg] = useState<Org | null>(null);
   const [memories, setMemories] = useState<OrgMemory[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
+  const [integrations, setIntegrations] = useState<OrgIntegration[]>([]);
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
+  const [invitePhone, setInvitePhone] = useState("");
   const [companyType, setCompanyType] = useState("");
   const [preferredTone, setPreferredTone] = useState("");
   const [preferredRecapStyle, setPreferredRecapStyle] = useState("");
@@ -44,12 +61,14 @@ export function JobsHome() {
   const [notice, setNotice] = useState("");
 
   async function load() {
-    const [jobsRes, orgRes] = await Promise.all([
+    const [jobsRes, orgRes, integrationsRes] = await Promise.all([
       fetch("/api/jobs"),
       fetch("/api/org"),
+      fetch("/api/org/integrations"),
     ]);
     const jobsData = await jobsRes.json();
     const orgData = await orgRes.json();
+    const integrationsData = await integrationsRes.json();
 
     if (jobsData.org) setOrg(jobsData.org);
     if (Array.isArray(jobsData.jobs)) setJobs(jobsData.jobs);
@@ -61,6 +80,9 @@ export function JobsHome() {
       setPreferredBriefStyle(orgData.org.preferredBriefStyle ?? "");
     }
     if (Array.isArray(orgData.memories)) setMemories(orgData.memories);
+    if (Array.isArray(integrationsData.integrations)) {
+      setIntegrations(integrationsData.integrations);
+    }
   }
 
   useEffect(() => {
@@ -149,6 +171,51 @@ export function JobsHome() {
     }
   }
 
+  async function invitePm() {
+    setError("");
+    if (!invitePhone.trim()) {
+      setError("Phone required");
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch("/api/org/invites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: invitePhone }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Could not invite PM");
+      setInvitePhone("");
+      setNotice("PM invited.");
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not invite PM");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function requestIntegration(provider: string) {
+    setError("");
+    setLoading(true);
+    try {
+      const res = await fetch("/api/org/integrations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ provider }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Could not request integration");
+      setNotice("Integration requested for a sprint.");
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not request integration");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <div className="space-y-10">
       <section className="rounded-2xl border border-border bg-card p-6">
@@ -175,6 +242,62 @@ export function JobsHome() {
           {error || notice}
         </div>
       )}
+
+      <section className="grid gap-8 lg:grid-cols-[0.85fr,1.15fr]">
+        <div className="rounded-2xl border border-border bg-card p-6 space-y-4">
+          <div>
+            <p className="text-sm font-medium text-accent">Team access</p>
+            <h2 className="mt-2 text-xl font-semibold">Invite another PM</h2>
+            <p className="mt-2 text-sm text-muted">
+              Send an invite by US phone. When they sign in, they share this company&apos;s jobs.
+            </p>
+          </div>
+          <input
+            value={invitePhone}
+            onChange={(e) => setInvitePhone(e.target.value)}
+            placeholder="PM phone number"
+            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-accent"
+          />
+          <Button onClick={invitePm} disabled={loading}>
+            Invite PM
+          </Button>
+        </div>
+
+        <div className="rounded-2xl border border-border bg-card p-6 space-y-4">
+          <div>
+            <p className="text-sm font-medium text-accent">Connect in a sprint</p>
+            <h2 className="mt-2 text-xl font-semibold">Turn on systems when you need them</h2>
+            <p className="mt-2 text-sm text-muted">
+              These are request-only for now. We&apos;ll enable the connector for your company in an implementation sprint.
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {INTEGRATIONS.map((integration) => {
+              const requested = integrations.some(
+                (item) => item.provider === integration.id
+              );
+              return (
+                <div
+                  key={integration.id}
+                  className="rounded-xl border border-border px-4 py-3 text-sm"
+                >
+                  <p className="font-medium">{integration.name}</p>
+                  <p className="mt-1 text-muted">{integration.use}</p>
+                  <Button
+                    size="sm"
+                    variant={requested ? "secondary" : "ghost"}
+                    className="mt-3"
+                    disabled={loading || requested}
+                    onClick={() => requestIntegration(integration.id)}
+                  >
+                    {requested ? "Requested" : "Connect"}
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
 
       <section className="grid gap-8 xl:grid-cols-[1.1fr,0.9fr]">
         <div className="rounded-2xl border border-border bg-card p-6 space-y-4">

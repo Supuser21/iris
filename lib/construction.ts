@@ -7,6 +7,7 @@ import {
   jobPeople,
   jobs,
   meetings,
+  orgMembers,
   orgMemories,
   orgs,
   outboundMessages,
@@ -66,8 +67,27 @@ export async function getOwnerOrg(userId: string) {
   return org ?? null;
 }
 
+export async function getUserOrg(userId: string) {
+  const owned = await getOwnerOrg(userId);
+  if (owned) return owned;
+
+  const [membership] = await db
+    .select()
+    .from(orgMembers)
+    .where(eq(orgMembers.userId, userId))
+    .limit(1);
+  if (!membership) return null;
+
+  const [org] = await db
+    .select()
+    .from(orgs)
+    .where(eq(orgs.id, membership.orgId))
+    .limit(1);
+  return org ?? null;
+}
+
 export async function ensureOwnerOrg(userId: string, userName?: string | null) {
-  const existing = await getOwnerOrg(userId);
+  const existing = await getUserOrg(userId);
   if (existing) return existing;
 
   const id = nanoid();
@@ -84,11 +104,18 @@ export async function ensureOwnerOrg(userId: string, userName?: string | null) {
   if (!created) {
     throw new Error("Failed to create owner org");
   }
+  await db.insert(orgMembers).values({
+    id: nanoid(),
+    orgId: created.id,
+    userId,
+    role: "owner",
+    createdAt: new Date(),
+  });
   return created;
 }
 
 export async function getOwnedJob(jobId: string, userId: string) {
-  const org = await getOwnerOrg(userId);
+  const org = await getUserOrg(userId);
   if (!org) return null;
   const [job] = await db
     .select()
@@ -110,7 +137,7 @@ export async function getOrgMemories(orgId: string, limit = 8) {
 export async function getCompanyContextForUser(
   userId: string
 ): Promise<CompanyContext | null> {
-  const org = await getOwnerOrg(userId);
+  const org = await getUserOrg(userId);
   if (!org) return null;
   return getCompanyContextForOrg(org.id);
 }
@@ -145,7 +172,7 @@ export async function getOwnedPeople(jobId: string) {
 export async function getJobSnapshot(userId: string, jobId: string) {
   const job = await getOwnedJob(jobId, userId);
   if (!job) return null;
-  const org = await getOwnerOrg(userId);
+  const org = await getUserOrg(userId);
   if (!org) return null;
 
   const [crew, docs, meetingRows, outbound, replies, memories] = await Promise.all([

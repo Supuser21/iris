@@ -166,7 +166,42 @@ export async function initDb() {
       title TEXT NOT NULL,
       content TEXT NOT NULL,
       source TEXT NOT NULL,
+      file_name TEXT,
+      mime_type TEXT,
       created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+  `;
+  await sql`ALTER TABLE job_documents ADD COLUMN IF NOT EXISTS file_name TEXT`;
+  await sql`ALTER TABLE job_documents ADD COLUMN IF NOT EXISTS mime_type TEXT`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS org_members (
+      id TEXT PRIMARY KEY,
+      org_id TEXT NOT NULL REFERENCES orgs(id),
+      user_id TEXT NOT NULL REFERENCES users(id),
+      role TEXT NOT NULL DEFAULT 'pm',
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+  `;
+  await sql`
+    CREATE TABLE IF NOT EXISTS org_invites (
+      id TEXT PRIMARY KEY,
+      org_id TEXT NOT NULL REFERENCES orgs(id),
+      phone TEXT NOT NULL,
+      role TEXT NOT NULL DEFAULT 'pm',
+      status TEXT NOT NULL DEFAULT 'pending',
+      invited_by_user_id TEXT NOT NULL REFERENCES users(id),
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    );
+  `;
+  await sql`
+    CREATE TABLE IF NOT EXISTS org_integrations (
+      id TEXT PRIMARY KEY,
+      org_id TEXT NOT NULL REFERENCES orgs(id),
+      provider TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'requested',
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
     );
   `;
   await sql`

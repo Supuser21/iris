@@ -135,7 +135,47 @@ export const jobDocuments = pgTable("job_documents", {
   title: text("title").notNull(),
   content: text("content").notNull(),
   source: text("source").notNull(),
+  fileName: text("file_name"),
+  mimeType: text("mime_type"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+});
+
+export const orgMembers = pgTable("org_members", {
+  id: text("id").primaryKey(),
+  orgId: text("org_id")
+    .notNull()
+    .references(() => orgs.id),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id),
+  role: text("role").notNull().default("pm"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+});
+
+export const orgInvites = pgTable("org_invites", {
+  id: text("id").primaryKey(),
+  orgId: text("org_id")
+    .notNull()
+    .references(() => orgs.id),
+  phone: text("phone").notNull(),
+  role: text("role").notNull().default("pm"),
+  status: text("status").notNull().default("pending"),
+  invitedByUserId: text("invited_by_user_id")
+    .notNull()
+    .references(() => users.id),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+});
+
+export const orgIntegrations = pgTable("org_integrations", {
+  id: text("id").primaryKey(),
+  orgId: text("org_id")
+    .notNull()
+    .references(() => orgs.id),
+  provider: text("provider").notNull(),
+  status: text("status").notNull().default("requested"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
 
 export const meetings = pgTable("meetings", {
@@ -202,6 +242,9 @@ export type Reminder = typeof reminders.$inferSelect;
 export type Message = typeof messages.$inferSelect;
 export type Org = typeof orgs.$inferSelect;
 export type OrgMemory = typeof orgMemories.$inferSelect;
+export type OrgMember = typeof orgMembers.$inferSelect;
+export type OrgInvite = typeof orgInvites.$inferSelect;
+export type OrgIntegration = typeof orgIntegrations.$inferSelect;
 export type Job = typeof jobs.$inferSelect;
 export type Person = typeof people.$inferSelect;
 export type JobPerson = typeof jobPeople.$inferSelect;

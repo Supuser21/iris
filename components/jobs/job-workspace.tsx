@@ -34,7 +34,14 @@ type Snapshot = {
     status: string | null;
   };
   crew: Person[];
-  documents: { id: string; title: string; source: string; createdAt: string }[];
+  documents: {
+    id: string;
+    title: string;
+    source: string;
+    fileName: string | null;
+    mimeType: string | null;
+    createdAt: string;
+  }[];
   meetings: Meeting[];
   outbound: {
     id: string;
@@ -43,6 +50,7 @@ type Snapshot = {
     status: string;
     reason: string;
     createdAt: string;
+    personId: string | null;
   }[];
   replies: {
     id: string;
@@ -66,6 +74,7 @@ export function JobWorkspace({ jobId }: { jobId: string }) {
   const [docTitle, setDocTitle] = useState("");
   const [docContent, setDocContent] = useState("");
   const [docSource, setDocSource] = useState("note");
+  const [docFile, setDocFile] = useState<File | null>(null);
 
   const [meetingTitle, setMeetingTitle] = useState("");
   const [meetingTranscript, setMeetingTranscript] = useState("");
@@ -109,6 +118,19 @@ export function JobWorkspace({ jobId }: { jobId: string }) {
     return map;
   }, [snapshot]);
 
+  const followUpStatus = useMemo(() => {
+    if (!snapshot) return [];
+    return snapshot.crew.map((person) => {
+      const lastOutbound = snapshot.outbound.find(
+        (item) => item.personId === person.id || item.phone === person.phone
+      );
+      const lastReply = snapshot.replies.find(
+        (reply) => reply.personId === person.id || reply.phone === person.phone
+      );
+      return { person, lastOutbound, lastReply };
+    });
+  }, [snapshot]);
+
   async function post(path: string, body: unknown) {
     setError("");
     setNotice("");
@@ -118,6 +140,27 @@ export function JobWorkspace({ jobId }: { jobId: string }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Request failed");
+      await load();
+      return data;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Request failed");
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function postForm(path: string, body: FormData) {
+    setError("");
+    setNotice("");
+    setLoading(true);
+    try {
+      const res = await fetch(path, {
+        method: "POST",
+        body,
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Request failed");
@@ -167,6 +210,9 @@ export function JobWorkspace({ jobId }: { jobId: string }) {
             <div>
               <p className="text-sm font-medium text-accent">Crew</p>
               <h2 className="mt-2 text-lg font-semibold">Who Iris can reach</h2>
+              <p className="mt-2 text-sm text-muted">
+                US numbers only. Crew can reply for 7 days after the last Iris text.
+              </p>
             </div>
             <div className="space-y-3">
               <input
@@ -260,29 +306,56 @@ export function JobWorkspace({ jobId }: { jobId: string }) {
               rows={7}
               className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-accent"
             />
+            <div className="rounded-xl border border-dashed border-border bg-background p-4">
+              <label className="text-sm font-medium">Upload PDF or image</label>
+              <p className="mt-1 text-xs text-muted">
+                PDFs are extracted into job context. Images are saved as job files with a note.
+              </p>
+              <input
+                type="file"
+                accept="application/pdf,image/*"
+                onChange={(e) => setDocFile(e.target.files?.[0] ?? null)}
+                className="mt-3 block w-full text-sm"
+              />
+            </div>
             <Button
               disabled={loading}
               onClick={async () => {
-                const data = await post(`/api/jobs/${jobId}/documents`, {
-                  title: docTitle,
-                  content: docContent,
-                  source: docSource,
-                });
+                const data = docFile
+                  ? await postForm(
+                      `/api/jobs/${jobId}/documents`,
+                      (() => {
+                        const form = new FormData();
+                        form.set("title", docTitle);
+                        form.set("source", docSource);
+                        form.set("file", docFile);
+                        return form;
+                      })()
+                    )
+                  : await post(`/api/jobs/${jobId}/documents`, {
+                      title: docTitle,
+                      content: docContent,
+                      source: docSource,
+                    });
                 if (data) {
                   setDocTitle("");
                   setDocContent("");
                   setDocSource("note");
+                  setDocFile(null);
                   setNotice("Job note saved.");
                 }
               }}
             >
-              Save note
+              {docFile ? "Upload file" : "Save note"}
             </Button>
             <div className="space-y-2 text-sm text-muted">
               {snapshot.documents.map((doc) => (
                 <div key={doc.id} className="rounded-xl border border-border px-4 py-3">
                   <p className="font-medium text-foreground">{doc.title}</p>
-                  <p>{doc.source}</p>
+                  <p>
+                    {doc.source}
+                    {doc.fileName ? ` · ${doc.fileName}` : ""}
+                  </p>
                 </div>
               ))}
             </div>
@@ -474,6 +547,48 @@ export function JobWorkspace({ jobId }: { jobId: string }) {
                 )}
               </div>
             ))}
+          </div>
+
+          <div className="rounded-2xl border border-border bg-card p-6 space-y-4">
+            <div>
+              <p className="text-sm font-medium text-accent">Follow-up status</p>
+              <h2 className="mt-2 text-lg font-semibold">Who got it and who replied</h2>
+              <p className="mt-2 text-sm text-muted">
+                Uses the latest Iris text and crew reply on this job.
+              </p>
+            </div>
+            <div className="space-y-3 text-sm">
+              {followUpStatus.map(({ person, lastOutbound, lastReply }) => (
+                <div
+                  key={person.id}
+                  className="grid gap-3 rounded-xl border border-border p-3 sm:grid-cols-[1fr_auto]"
+                >
+                  <div>
+                    <p className="font-medium">{person.name}</p>
+                    <p className="text-muted">
+                      {person.role || "Crew"} · {person.phone}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                    <span className="rounded-full bg-accent/10 px-3 py-1 text-xs font-medium text-accent">
+                      {lastOutbound ? lastOutbound.status : "not sent"}
+                    </span>
+                    <span
+                      className={`rounded-full px-3 py-1 text-xs font-medium ${
+                        lastReply
+                          ? "bg-accent/10 text-accent"
+                          : "bg-[#f5f4f1] text-muted"
+                      }`}
+                    >
+                      {lastReply ? "replied" : "no reply"}
+                    </span>
+                  </div>
+                </div>
+              ))}
+              {followUpStatus.length === 0 && (
+                <p className="text-muted">Add crew to see follow-up status.</p>
+              )}
+            </div>
           </div>
 
           <div className="grid gap-8 lg:grid-cols-2">

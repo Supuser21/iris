@@ -5,6 +5,7 @@ import {
   hasSms,
 } from "@/lib/sms";
 import { hasOpenRouter, hasGoogleOAuth, isDevOtpMode, getAppUrl } from "@/lib/env";
+import { getLastCronAt } from "@/lib/cron/process";
 
 export async function GET(req: Request) {
   const auth = req.headers.get("authorization");
@@ -43,5 +44,6 @@ export async function GET(req: Request) {
     checklist,
     issues,
     ranAt: new Date().toISOString(),
+    lastCronAt: getLastCronAt(),
   });
 }

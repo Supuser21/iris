@@ -15,9 +15,11 @@ import {
   advanceOnboarding,
   applyOnboardingUpdates,
 } from "@/lib/onboarding";
+import { runDueWorkInBackground } from "@/lib/cron/process";
 
 export async function POST(req: Request) {
   await ensureDb();
+  runDueWorkInBackground();
   const session = await getSession();
   if (!session.userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

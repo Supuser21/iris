@@ -10,7 +10,7 @@ const geist = Geist({
 export const metadata: Metadata = {
   title: "Iris — the AI assistant for construction teams",
   description:
-    "Iris drafts job updates, texts your crew, and keeps every reply on the right job. $4,000 includes Iris, a tool-building chat, and implementation sprints.",
+    "Iris drafts job updates, texts your crew, and keeps every reply on the right job. $4,000/month includes Iris, a tool-building chat, and implementation sprints.",
 };
 
 export default function RootLayout({
