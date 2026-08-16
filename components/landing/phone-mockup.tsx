@@ -11,10 +11,10 @@ function Bubble({
   return (
     <div className={`flex ${isIncoming ? "justify-start" : "justify-end"}`}>
       <div
-        className={`relative max-w-[76%] px-3.5 py-2 text-[14px] leading-[1.28] tracking-[-0.015em] ${
+        className={`max-w-[78%] px-2.5 py-1.5 text-[11px] leading-[1.25] tracking-[-0.01em] ${
           isIncoming
-            ? "rounded-[19px] rounded-bl-[5px] bg-[#E9E9EB] text-[#111111] after:absolute after:bottom-0 after:left-[-5px] after:h-3 after:w-3 after:rounded-br-full after:bg-[#E9E9EB]"
-            : "rounded-[19px] rounded-br-[5px] bg-[#0A84FF] text-white after:absolute after:bottom-0 after:right-[-5px] after:h-3 after:w-3 after:rounded-bl-full after:bg-[#0A84FF]"
+            ? "rounded-[16px] rounded-bl-[4px] bg-[#E9E9EB] text-[#111111]"
+            : "rounded-[16px] rounded-br-[4px] bg-[#0A84FF] text-white"
         }`}
       >
         {children}
@@ -26,23 +26,23 @@ function Bubble({
 export function PhoneMockup({ className = "" }: { className?: string }) {
   return (
     <div
-      className={`relative mx-auto h-[610px] w-[300px] rounded-[3rem] bg-[#1c1c1e] p-[9px] shadow-[0_30px_80px_rgba(0,0,0,0.22)] ring-1 ring-black/20 ${className}`}
+      className={`relative mx-auto h-[560px] w-[270px] overflow-hidden rounded-[2.6rem] bg-[#1c1c1e] p-[8px] shadow-[0_30px_80px_rgba(0,0,0,0.22)] ring-1 ring-black/20 sm:h-[610px] sm:w-[300px] sm:rounded-[3rem] sm:p-[9px] ${className}`}
     >
-      <div className="absolute left-1/2 top-[18px] z-30 h-[26px] w-[92px] -translate-x-1/2 rounded-full bg-[#1c1c1e]" />
+      <div className="absolute left-1/2 top-[14px] z-30 h-[22px] w-[78px] -translate-x-1/2 rounded-full bg-[#1c1c1e] sm:top-[18px] sm:h-[26px] sm:w-[92px]" />
 
       <div
-        className="flex h-full flex-col overflow-hidden rounded-[2.35rem] bg-white"
+        className="flex h-full min-h-0 flex-col overflow-hidden rounded-[2.1rem] bg-white sm:rounded-[2.35rem]"
         style={{
           fontFamily:
             '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif',
         }}
       >
-        <div className="relative flex h-[42px] items-center justify-between bg-[#F7F7F7] px-6 pt-2 text-[12px] font-semibold text-black">
+        <div className="relative flex h-8 shrink-0 items-center justify-between bg-[#F7F7F7] px-5 pt-1 text-[10px] font-semibold text-black sm:h-[42px] sm:px-6 sm:pt-2 sm:text-[12px]">
           <span>9:41</span>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1">
             <svg
-              width="16"
-              height="12"
+              width="14"
+              height="10"
               viewBox="0 0 16 12"
               fill="none"
               aria-hidden
@@ -67,16 +67,16 @@ export function PhoneMockup({ className = "" }: { className?: string }) {
                 strokeLinecap="round"
               />
             </svg>
-            <span className="relative h-2.5 w-5 rounded-[3px] border border-[#34C759] bg-[#34C759] after:absolute after:right-[-3px] after:top-1/2 after:h-1.5 after:w-0.5 after:-translate-y-1/2 after:rounded-r-sm after:bg-[#34C759]" />
+            <span className="relative h-2 w-4 rounded-[3px] border border-[#34C759] bg-[#34C759] after:absolute after:right-[-2px] after:top-1/2 after:h-1 after:w-0.5 after:-translate-y-1/2 after:rounded-r-sm after:bg-[#34C759]" />
           </div>
         </div>
 
-        <div className="border-b border-[#D1D1D6] bg-[#F7F7F7] px-3 pb-2">
-          <div className="grid grid-cols-[44px_1fr_44px] items-end">
-            <div className="pb-1 text-[#007AFF]">
+        <div className="shrink-0 border-b border-[#D1D1D6] bg-[#F7F7F7] px-3 pb-1.5">
+          <div className="grid grid-cols-[36px_1fr_36px] items-end">
+            <div className="pb-0.5 text-[#007AFF]">
               <svg
-                width="12"
-                height="20"
+                width="10"
+                height="16"
                 viewBox="0 0 10 16"
                 fill="none"
                 aria-hidden
@@ -91,10 +91,10 @@ export function PhoneMockup({ className = "" }: { className?: string }) {
               </svg>
             </div>
             <div className="flex flex-col items-center">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#2d5a4a] to-[#18392f] text-sm font-semibold text-white shadow-inner">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[#2d5a4a] to-[#18392f] text-[11px] font-semibold text-white shadow-inner sm:h-9 sm:w-9 sm:text-xs">
                 I
               </div>
-              <span className="mt-1 text-[11px] font-medium text-black">
+              <span className="mt-0.5 text-[10px] font-medium text-black">
                 Iris
               </span>
             </div>
@@ -102,8 +102,8 @@ export function PhoneMockup({ className = "" }: { className?: string }) {
           </div>
         </div>
 
-        <div className="flex-1 space-y-2 bg-white px-3 pb-4 pt-5">
-          <p className="pb-2 text-center text-[11px] font-semibold text-[#8E8E93]">
+        <div className="min-h-0 flex-1 space-y-1.5 overflow-hidden bg-white px-2.5 pb-2 pt-3">
+          <p className="pb-1 text-center text-[10px] font-semibold text-[#8E8E93]">
             Today 9:41 AM
           </p>
 
@@ -113,8 +113,6 @@ export function PhoneMockup({ className = "" }: { className?: string }) {
           <Bubble variant="incoming">
             Mike wasn&apos;t on the call. I drafted the recap and flagged rebar.
           </Bubble>
-
-          <div className="h-1" />
 
           <Bubble variant="outgoing">send it and cc Jen</Bubble>
           <Bubble variant="incoming">
@@ -128,15 +126,15 @@ export function PhoneMockup({ className = "" }: { className?: string }) {
           </Bubble>
         </div>
 
-        <div className="border-t border-[#D1D1D6] bg-white px-2 pb-3 pt-2">
-          <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#E9E9EB] text-[#8E8E93]">
+        <div className="shrink-0 border-t border-[#D1D1D6] bg-white px-2 pb-2.5 pt-1.5">
+          <div className="flex items-center gap-1.5">
+            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#E9E9EB] text-[11px] text-[#8E8E93]">
               +
             </div>
-            <div className="flex h-8 flex-1 items-center rounded-full border border-[#C7C7CC] bg-white px-3 text-[14px] text-[#C7C7CC]">
+            <div className="flex h-7 flex-1 items-center rounded-full border border-[#C7C7CC] bg-white px-2.5 text-[11px] text-[#C7C7CC]">
               iMessage
             </div>
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#0A84FF] text-xs font-semibold text-white">
+            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#0A84FF] text-[10px] font-semibold text-white">
               ↑
             </div>
           </div>
